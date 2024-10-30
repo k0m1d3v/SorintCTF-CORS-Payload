@@ -41,10 +41,14 @@
                 }
             }
         }
+
+        // Esegui la funzione checkKeywords quando la pagina è completamente caricata
+        window.addEventListener('DOMContentLoaded', (event) => {
+            checkKeywords();
+        });
     </script>
 </head>
 <body>
     <h1>XS-Leak Keyword Checker</h1>
-    <button onload="checkKeywords()">Check Keywords</button>
 </body>
 </html>
