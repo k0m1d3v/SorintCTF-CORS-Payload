@@ -15,7 +15,7 @@
 
         // Funzione per testare i caratteri della flag
         const testChar = (position) => {
-            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}'; // Caratteri da testare
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:\'",.<>?/|\\'; // Caratteri da testare
             for (let char of chars) {
                 const query = `${baseUrl}${currentFlag}${char}`;
                 fetch(query, {
