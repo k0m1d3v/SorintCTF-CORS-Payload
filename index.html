@@ -38,7 +38,7 @@
 
         // Funzione da chiamare al caricamento della pagina
         const testResourceLeak = async () => {
-            const url = 'https://matrix.capturetheflags.site/search?s=flag{'; // Sostituisci con l'URL da testare
+            const url = 'https://matrix.capturetheflags.site/search?s=Thomas'; // Sostituisci con l'URL da testare
             const result = await leak(url);
             const resultDiv = document.getElementById('result');
 
