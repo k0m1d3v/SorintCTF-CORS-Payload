@@ -64,7 +64,7 @@
                 }
 
                 if (!found) {
-                    console.log('Nessun carattere trovato, potrebbe essere un problema.'); // Opzionale: messaggio di avviso
+                    console.log('Nessun carattere trovato. Possibile terminazione della ricerca.'); // Messaggio di avviso
                     break; // Interrompe il ciclo se non viene trovato alcun carattere
                 }
             }
@@ -82,10 +82,15 @@
             const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // URL per il logging
             try {
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`; // Parametrizza il messaggio
-                await fetch(urlWithParams, { method: 'GET' }); // Invia il log
-                console.log('Log inviato con successo');
+                const response = await fetch(urlWithParams, { method: 'GET' }); // Invia il log
+
+                if (!response.ok) {
+                    console.error('Errore durante l\'invio del log:', response.statusText); // Gestione degli errori
+                } else {
+                    console.log('Log inviato con successo:', message); // Log del messaggio inviato
+                }
             } catch (error) {
-                console.error('Errore di rete:', error);
+                console.error('Errore di rete:', error); // Gestione degli errori di rete
             }
         };
 
