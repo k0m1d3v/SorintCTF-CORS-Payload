@@ -27,7 +27,7 @@
 
         // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/8a1545c1-ce58-4176-b784-f4be5a489e16'; // Sostituisci con il tuo URL di Webhook.site
+            const webhookUrl = 'https://webhook.site/37bc43b6-0f0f-42ab-9191-0a5747e3f381'; // Sostituisci con il tuo URL di Webhook.site
             try {
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
                 const response = await fetch(urlWithParams, { method: 'GET' });
